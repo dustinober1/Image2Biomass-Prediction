@@ -32,3 +32,34 @@
 ## Next Steps (Phase 2)
 1.  **Baseline Model**: Train a Gradient Boosting model (XGBoost/CatBoost) using only `Height`, `NDVI`, `Species`, `State` to establish a performance floor.
 2.  **Image Pipeline**: Build a PyTorch Dataset that loads images and resizes/pads them correctly.
+
+## Phase 2: Baseline Modeling Results
+
+### 1. Tabular Baseline (XGBoost)
+- **Inputs**: `Height_Ave_cm`, `Pre_GSHH_NDVI`, `State`, `Species`
+- **Performance**:
+    - **Avg RMSE**: **10.92**
+    - **Avg R2**: **0.62**
+- **Detailed Findings**:
+    - **Green Biomass**: Highly predictable using `NDVI` and `Height` (R2 ~0.78 for `Dry_Green_g`).
+    - **Dead Biomass**: Poorly predicted (R2 ~0.37 for `Dry_Dead_g`), as NDVI primarily measures greenness.
+    - **Implication**: Metadata sets a strong floor for green components but fails on dead/dry matter.
+
+### 2. Image Baseline (ResNet18)
+- **Inputs**: Raw RGB Images (resized to 224x224)
+- **Performance**:
+    - **Avg RMSE**: **~28.6** (Best Validation RMSE)
+    - **Avg R2**: Negative or near zero (Poor generalization)
+- **Detailed Findings**:
+    - The model struggled significantly compared to the tabular baseline.
+    - **Why?**: Biomass density is hard to estimate purely from 2D texture without depth (height) or spectral calibration (NDVI) information in this small dataset (357 images).
+    - **Implication**: Visual features alone are **insufficient**.
+
+## Conclusion & Next Steps (Phase 3)
+- **Strategy**: **Multimodal Fusion** is required.
+- **Hypothesis**: Combining the strong "volume" signal from `Height/NDVI` with the "composition/texture" signal from Images will outperform either baseline.
+- **Plan**:
+    1.  Build a **Dual-Branch Network**:
+        - **Branch A**: MLP for Metadata.
+        - **Branch B**: CNN (EfficientNet/ResNet) for Images.
+    2.  **Fusion**: Concatenate features -> Regress 5 targets.
