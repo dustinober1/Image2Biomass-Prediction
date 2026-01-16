@@ -11,13 +11,13 @@
     - [x] Check image dimensions and aspect ratios.
 
 ## Phase 2: Baselines
-- [ ] **Tabular Baseline**
-    - [ ] Prepare standard X/y splits (Train/Val).
-    - [ ] Train XGBoost/CatBoost using only `Height`, `NDVI`, `State`, `Species`.
-    - [ ] Evaluate RMSE/MAE.
-- [ ] **Simple CNN Baseline**
-    - [ ] Create PyTorch/TF Dataset class.
-    - [ ] Train a ResNet18 predicting `Dry_Total_g` from images only.
+- [x] **Tabular Baseline**
+    - [x] Prepare standard X/y splits (Train/Val).
+    - [x] Train XGBoost on `Height`, `NDVI`, `State`, `Species`.
+    - [x] Evaluate RMSE/MAE. (RMSE ~10.9)
+- [x] **Simple CNN Baseline**
+    - [x] Create PyTorch Dataset class.
+    - [x] Train a ResNet18 predicting `Dry_Total_g` from images only. (RMSE ~28.6)
 
 ## Phase 3: Core Development (Multimodal)
 - [ ] **Data Loader**
