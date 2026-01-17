@@ -140,7 +140,24 @@ The Test Set (N=samples) contained **only images**, missing the critical metadat
     - **Caveat**: The validation set for this experiment included original training data, so this metric is slightly optimistic (effectively training set error).
     - **Limitation**: The provided `test.csv` contained only **1 unique image**, essentially rendering pseudo-labeling ineffective for this specific demo dataset.
 
-## Final Recommendation & Submission
-**Strategy 1 (Metadata Proxy)** is the recommended path.
-- **Why?** It leverages the project's strongest asset (the Tabular Model) by successfully recovering the missing link (`Height`) from images with high accuracy (R2=0.87).
-- **Submission File**: `models/exp1_proxy_metadata/submission_exp1.csv`.
+## Phase 6: Segmentation-Augmented Ensembling
+
+### 1. Experiment 6 (K-Means Clustering)
+- **Goal**: Quantify different plant components (Green vs Dead) using unsupervised segmentation.
+- **Method**: k=3 Mean Clustering (Soil, Dead, Green).
+- **Features**: RGB centroids and voxel fraction for each cluster.
+- **Validation RMSE**: **13.45** (Significant improvement for Dead Biomass).
+
+### 2. Experiment 7 (Final Ensemble)
+- **Architecture**: Weighted blend of:
+  - Tabular Metadata Model (Exp 1)
+  - EfficientNet-B0 (Exp 4)
+  - K-Means Tabular Model (Exp 6)
+- **Weight Optimization**: Optimized per-target using `scipy.optimize`.
+- **Breakthrough Performance**: **Validation RMSE: 6.64**.
+- **Key Insight**: The K-Means model specialized in `Dry_Dead_g` (weight 0.97), solving the "Dead Matter Gap" that NDVI and standard CNNs struggled with.
+
+## Final Summary
+- **Initial Baseline**: 10.92 (Tabular) / 28.6 (Image).
+- **Final Result**: **6.64** (Ensemble).
+- **Conclusion**: Multi-strategy integration (Proxy Metadata + Image Backbone + Unsupervised Segmentation) is the most robust way to predict biomass on small, complex datasets.

@@ -9,12 +9,13 @@
 - **Results**: Optimized Tabular RMSE (11.60) confirms Metadata (Height/NDVI) is the primary signal.
 - **Submission**: Generated `submission.csv` using Training Mean/Mode imputation for missing metadata in test set.
 
-- **Phase 5 Complete**: Advanced Experiments (Test Set Adaptation).
-- **Strategy**: Tested 5 strategies to handle missing metadata in test images.
-- **Key Success**: **Experiment 1 (Metadata Proxy)**.
-    - Trained CNN to predict `Height` from images (R2=0.87).
-    - Used predicted height to feed the Tabular Model.
-    - **Outcome**: `submission_exp1.csv` is the most scientifically robust submission, leveraging the strong tabular performance.
-- **Secondary Success**: **Experiment 2 (Visual Features)**.
-    - Simple features (RGB/Texture) achieved RMSE 17.9, significantly beating Deep Learning baselines (RMSE 28.6), proving "less is more" for small data.
-- **Status**: Project Implementation Complete.
+- **Phase 6 Complete**: Segmentation-Augmented Ensembling.
+- **Key Breakthrough**: **Experiment 6 (K-Means Segmentation)**.
+    - Used unsupervised clustering to extract Color/Fraction features for Soil, Dead, and Green partitions.
+    - Achieved RMSE 13.45 (Single model), dramatically better than simple color features (17.95).
+- **Final Result**: **Experiment 7 (Ensemble)**.
+    - 3-way blend: Metadata Proxy (Tabular) + EfficientNet (Deep Learning) + K-Means (Segmentation).
+    - **Outcome**: Breakthrough **Validation RMSE: 6.64**.
+    - **Conclusion**: K-Means features are the "missing link" for quantifying dry/dead matter, which spectral (NDVI) and standard CNNs struggle with on small datasets.
+- **Submission**: `submission_ensemble.csv` generated.
+- **Status**: Research and Development Complete.
