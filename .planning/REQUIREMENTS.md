@@ -123,9 +123,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REPRO-01 | Phase 1 | Complete |
 | REPRO-02 | Phase 1 | Complete |
 | REPRO-03 | Phase 1 | Complete |
-| OPT-01 | Phase 7 | Pending |
-| OPT-02 | Phase 7 | Pending |
-| OPT-03 | Phase 7 | Pending |
+| OPT-01 | Phase 7 | Complete |
+| OPT-02 | Phase 7 | Complete |
+| OPT-03 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 24 total
@@ -134,4 +134,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-17*
-*Last updated: 2025-01-17 after Phase 2 completion*
+*Last updated: 2026-01-17 after Phase 7 (Milestone) completion*
