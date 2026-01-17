@@ -109,9 +109,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ORG-02 | Phase 2 | Complete |
 | ORG-03 | Phase 2 | Complete |
 | ORG-04 | Phase 2 | Complete |
-| ANALYSIS-01 | Phase 3 | Pending |
-| ANALYSIS-02 | Phase 3 | Pending |
-| ANALYSIS-03 | Phase 3 | Pending |
+| ANALYSIS-01 | Phase 3 | Complete |
+| ANALYSIS-02 | Phase 3 | Complete |
+| ANALYSIS-03 | Phase 3 | Complete |
 | CONFIG-01 | Phase 4 | Pending |
 | CONFIG-02 | Phase 4 | Pending |
 | CONFIG-03 | Phase 4 | Pending |
