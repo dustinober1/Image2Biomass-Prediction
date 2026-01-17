@@ -1,162 +1,34 @@
-# Roadmap: Image2Biomass Experimental Framework
+### Phase 8: Advanced Analytics
 
-## Overview
+**Goal**: Enable error analysis, model interpretability, and automated insights generation
 
-Transform 29 ad-hoc experiment scripts into a systematic experimentation framework that enables controlled ablations, model comparisons, and insights generation. The journey builds core tracking infrastructure first, adds organization and analysis capabilities, then creates a configuration-driven execution layer, and finally scales to parallel execution and hyperparameter optimization. Each phase delivers a complete, verifiable capability that builds toward the goal of understanding what drives biomass predictions through systematic experimentation rather than trial-and-error.
+**Depends on**: Phase 7
 
-## Phases
-
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
-
-- [x] **Phase 1: Experiment Tracking Foundation** - Core tracking and reproducibility infrastructure (completed 2025-01-17)
-- [x] **Phase 2: Organization & Discovery** - Grouping, tagging, and searching experiments (completed 2025-01-17)
-- [x] **Phase 3: Analysis & Comparison** - Metrics comparison and results aggregation (completed 2026-01-17)
-- [x] **Phase 4: Configuration System** - YAML-driven experiment definitions (completed 2026-01-17)
-- [x] **Phase 5: Script Adapters & Auto-Logging** - Integration with existing 29 training scripts (completed 2026-01-17)
-- [x] **Phase 6: Parallel Execution Infrastructure** - Batch execution and resource management (completed 2026-01-17)
-- [x] **Phase 7: Hyperparameter Optimization** - Optuna integration with pruning (completed 2026-01-17)
-
-## Phase Details
-
-### Phase 1: Experiment Tracking Foundation
-
-**Goal**: Establish reproducible experiment tracking with comprehensive logging and metadata capture
-
-**Depends on**: Nothing (first phase)
-
-**Requirements**: TRACK-01, TRACK-02, TRACK-03, TRACK-04, TRACK-05, REPRO-01, REPRO-02, REPRO-03
+**Requirements**: ANALYTICS-01, ANALYTICS-02, ANALYTICS-03
 
 **Success Criteria** (what must be TRUE):
-1. User can record every experiment execution with timestamp, status (running/completed/failed), and duration
-2. User can capture all hyperparameters and configuration values for each experiment
-3. User can record evaluation metrics (RMSE, R², MAE) per target variable
-4. User can store artifacts (model files, predictions CSVs, analysis outputs) with experiment references
-5. User can log experiments programmatically via Python SDK within training scripts
-6. Framework tracks Python environment (package versions) for each experiment
-7. Framework enforces proper data splitting (train/validation/test) to prevent leakage
-8. Framework logs ALL experiments including failures (prevents cherry-picking)
+1. User can analyze prediction errors and identify failure modes
+2. User can interpret model decisions and feature importance
+3. User can generate automated insights from experiment results
 
-**Plans**: 4 plans in 3 waves
+**Plans**: 4 plans in 4 waves
 
-- [x] 01-01-PLAN.md — Initialize MLflow tracking infrastructure with Python SDK (Wave 1) ✓ Complete
-- [x] 01-02-PLAN.md — Create canonical three-way data split utilities (Wave 1) ✓ Complete
-- [x] 01-03-PLAN.md — Implement automatic environment and reproducibility tracking (Wave 2) ✓ Complete
-- [x] 01-04-PLAN.md — Create comprehensive example and documentation (Wave 3, checkpoint:human-verify) ✓ Complete
+- [ ] 08-01-PLAN.md — Create ErrorAnalyzer class for residual analysis and failure mode identification (Wave 1)
+- [ ] 08-02-PLAN.md — Create ModelInterpretability class for SHAP and ELI5 explanations (Wave 2)
+- [ ] 08-03-PLAN.md — Create InsightsGenerator class for automated insights and statistical testing (Wave 3)
+- [ ] 08-04-PLAN.md — Create CLI commands and ReportGenerator for analytics workflows (Wave 4)
 
-### Phase 2: Organization & Discovery
+**Details**:
+Phase 8 implements advanced analytics capabilities building on the solid foundation of Phases 1-7. The plan follows a vertical slice approach: error analysis (08-01), model interpretability (08-02), automated insights (08-03), and CLI/reporting integration (08-04). Each plan is self-contained with 2-3 tasks, targeting ~50% context usage per plan.
 
-**Goal**: Enable systematic organization and discovery of experiments through groups, tags, and search
+**Wave Structure:**
+- Wave 1: ErrorAnalyzer (residual plots, error distributions, failure mode clustering)
+- Wave 2: ModelInterpretability (SHAP values, feature importance, permutation importance)
+- Wave 3: InsightsGenerator (statistical testing, hyperparameter correlations, recommendations)
+- Wave 4: CLI commands and ReportGenerator (exp-analyze-errors, exp-interpret, exp-insights, HTML/PDF reports)
 
-**Depends on**: Phase 1
-
-**Requirements**: ORG-01, ORG-02, ORG-03, ORG-04
-
-**Success Criteria** (what must be TRUE):
-1. User can group related experiments (e.g., "ablation-studies", "ensemble-tests")
-2. User can tag experiments by model type, phase, and purpose
-3. User can search and filter experiments by metrics, parameters, and tags
-4. User can view experiments, metrics, and artifacts via web UI
-
-**Plans**: 1 plan in 1 wave
-
-- [x] 02-01-PLAN.md — Create ExperimentOrganizer class and extend ExperimentTracker with tagging (Wave 1) ✓ Complete
-
-### Phase 3: Analysis & Comparison
-
-**Goal**: Enable side-by-side comparison and aggregation of experimental results
-
-**Depends on**: Phase 2
-
-**Requirements**: ANALYSIS-01, ANALYSIS-02, ANALYSIS-03
-
-**Success Criteria** (what must be TRUE):
-1. User can compare metrics side-by-side across multiple experiments
-2. User can aggregate results from multiple experiments into structured format
-3. User can generate insights by clustering experiment results and identifying patterns
-
-**Plans**: 1 plan in 1 wave
-
-- [x] 03-01-PLAN.md — Create ExperimentComparator with comparison methods, export functionality, and insights generation (Wave 1) ✓ Complete
-
-### Phase 4: Configuration System
-
-**Goal**: Enable experiment definition via YAML configurations instead of code
-
-**Depends on**: Phase 3
-
-**Requirements**: CONFIG-01, CONFIG-02, CONFIG-03, INTEGRATION-01
-
-**Success Criteria** (what must be TRUE):
-1. User can define experiments as YAML configuration files
-2. User can execute experiments via CLI: `exp-run config.yaml`
-3. User can use parameter templating and variable substitution for systematic sweeps
-4. Framework wraps existing 29 training scripts via adapter pattern (no script modifications required)
-
-**Plans**: 4 plans in 3 waves
-
-- [x] 04-01-PLAN.md — Design YAML schema and create abstract adapter interface (Wave 1) ✓ Complete
-- [x] 04-02-PLAN.md — Implement configuration parser with Jinja2 templating and sweep expansion (Wave 2) ✓ Complete
-- [x] 04-03-PLAN.md — Build CLI entry point `exp-run` for executing experiments (Wave 3) ✓ Complete
-- [x] 04-04-PLAN.md — Implement concrete adapters for PyTorch and sklearn scripts (Wave 3, checkpoint:human-verify) ✓ Complete
-
-### Phase 5: Script Adapters & Auto-Logging
-
-**Goal**: Automatic metric logging for common ML frameworks without manual code
-
-**Depends on**: Phase 4
-
-**Requirements**: INTEGRATION-02, INFRA-03
-
-**Success Criteria** (what must be TRUE):
-1. Framework auto-logs metrics for sklearn/XGBoost/PyTorch models without manual logging code
-2. Framework manages random seeds for reproducibility (configurable per experiment)
-
-**Plans**: 1 plan in 1 wave
-
-- [x] 05-01-PLAN.md — Create AutoLogger and SeedManager with adapter integration (Wave 1) ✓ Complete
-
-### Phase 6: Parallel Execution Infrastructure
-
-**Goal**: Enable batch execution of multiple experiments with resource management
-
-**Depends on**: Phase 5
-
-**Requirements**: INFRA-01, INFRA-02
-
-**Success Criteria** (what must be TRUE):
-1. Framework executes multiple experiments in parallel (batch mode)
-2. Framework manages GPU/CPU resource allocation for concurrent experiments
-
-**Plans**: 1 plan in 1 wave
-
-- [x] 06-01-PLAN.md — Create BatchExecutor and ResourceManager with CLI extension (Wave 1, checkpoint:human-verify) ✓ Complete
-
-### Phase 7: Hyperparameter Optimization
-
-**Goal**: Integrate hyperparameter optimization with efficient search and pruning
-
-**Depends on**: Phase 6
-
-**Requirements**: OPT-01, OPT-02, OPT-03
-
-**Success Criteria** (what must be TRUE):
-1. Framework integrates hyperparameter optimization (Optuna) with efficient search
-2. Framework supports pruning underperforming trials during optimization
-3. Framework enables parallel execution of optimization trials
-
-**Plans**: 1 plan in 1 wave
-
-- [x] 07-01-PLAN.md — Integrate Optuna for automated hyperparameter optimization with pruning and parallel trials (Wave 1) ✓ Complete
-
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 7. Hyperparameter Optimization | 1/1 | ✓ Complete | 2026-01-17 |
+**Integration Points:**
+- Leverages MLflow artifacts (predictions CSVs, models) as single source of truth
+- Extends ExperimentComparator pattern for data fetching
+- Follows ErrorAnalyzer/ModelInterpretability/InsightsGenerator patterns
+- CLI integration with existing exp-run, exp-run-batch, exp-run-optimize commands
