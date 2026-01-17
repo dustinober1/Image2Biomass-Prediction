@@ -14,11 +14,61 @@ This framework provides a Python SDK for tracking ML experiments that addresses 
 
 ## Installation
 
-Install dependencies:
+### Quick Install
 
 ```bash
-pip install mlflow numpy pandas scikit-learn scipy
+# Install all dependencies
+pip install -r requirements.txt
+
+# Or install the package in development mode
+pip install -e .
 ```
+
+### Core Dependencies
+
+The framework requires the following minimum dependencies:
+
+- `mlflow>=3.8.0` - Experiment tracking and MLflow UI
+- `pyyaml>=6.0` - YAML configuration parsing
+- `pydantic>=2.0` - Schema validation
+- `jinja2>=3.0` - Template variable substitution
+- `numpy>=1.21.0`, `pandas>=1.3.0` - Data handling
+- `scikit-learn>=1.0.0`, `scipy>=1.7.0` - Metric logging and analysis
+- `torch>=1.10.0`, `xgboost>=1.5.0` - Adapters for different ML frameworks
+- `optuna>=3.0.0` - Hyperparameter optimization
+
+### Optional Dependencies
+
+For development and testing:
+- `pytest>=7.0.0`, `pytest-cov>=2.12.0` - Test framework
+- `black>=22.0.0`, `isort>=5.0.0`, `mypy>=0.910` - Code formatting
+
+### Installation Steps
+
+1. **Clone the repository** (if not already cloned)
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Set MLflow tracking URI** (optional, defaults to `./mlruns`):
+   ```bash
+   export MLFLOW_TRACKING_URI=./mlruns
+   ```
+4. **Start MLflow UI** (optional):
+   ```bash
+   mlflow ui
+   ```
+5. **Run example experiments**:
+   ```bash
+   # Single experiment
+   exp-run examples/configs/basic_experiment.yaml
+
+   # Batch execution (Phase 6)
+   exp-run-batch --dir examples/configs/batch/
+
+   # Hyperparameter optimization (Phase 7)
+   exp-run-optimize examples/configs/optimization/01_effnet_lr_search.yaml --n-trials 50
+   ```
 
 The framework uses MLflow with a local SQLite backend by default - no additional setup required.
 
