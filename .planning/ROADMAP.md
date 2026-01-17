@@ -115,7 +115,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. Framework auto-logs metrics for sklearn/XGBoost/PyTorch models without manual logging code
 2. Framework manages random seeds for reproducibility (configurable per experiment)
 
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+- [ ] 05-01-PLAN.md — Create AutoLogger and SeedManager with adapter integration (Wave 1)
 
 ### Phase 6: Parallel Execution Infrastructure
 
@@ -154,6 +156,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Configuration System | 4/4 | ✓ Complete | 2026-01-17 |
-| 5. Script Adapters & Auto-Logging | 0/TBD | Not started | - |
+| 5. Script Adapters & Auto-Logging | 0/1 | Not started | - |
 | 6. Parallel Execution Infrastructure | 0/TBD | Not started | - |
 | 7. Hyperparameter Optimization | 0/TBD | Not started | - |
