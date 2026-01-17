@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2025-01-17)
 ## Current Position
 
 Phase: 1 of 7 (Experiment Tracking Foundation)
-Plan: 1 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-17 — Completed 01-01-PLAN.md (MLflow Tracking Infrastructure)
+Last activity: 2026-01-17 — Completed 01-03-PLAN.md (Environment & Reproducibility Tracking)
 
-Progress: [██░░░░░░░░░] 20%
+Progress: [███░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 4.0 min
-- Total execution time: 0.1 hours
+- Total plans completed: 3
+- Average duration: 3.3 min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-experiment-tracking-foundation | 1 | 4 | 4.0 min |
+| 01-experiment-tracking-foundation | 3 | 4 | 3.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 4.0 min avg (1 plan)
+- Last 5 plans: 3.3 min avg (3 plans)
 - Trend: N/A (insufficient data)
 
 *Updated after each plan completion*
@@ -53,6 +53,13 @@ Recent decisions affecting current work:
 - Stratification using 5 quantile bins on Dry_Total_g target for distribution balance
 - JSON persistence for canonical splits to enable experiment reproducibility
 
+**From 01-03-PLAN.md (Environment & Reproducibility Tracking):**
+- Log git commit hash and branch as MLflow tags (not params) since they're metadata
+- Log package versions as params prefixed with 'env.' to distinguish from hyperparameters
+- Default auto_log_environment=True to ensure all runs capture reproducibility metadata
+- Handle missing git gracefully by returning 'unknown' instead of raising exception
+- Random seed logged as separate param for easy access and filtering
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -67,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17 15:57 UTC
-Stopped at: Completed 01-01-PLAN.md (MLflow Tracking Infrastructure)
+Last session: 2026-01-17 16:00 UTC
+Stopped at: Completed 01-03-PLAN.md (Environment & Reproducibility Tracking)
 Resume file: None
