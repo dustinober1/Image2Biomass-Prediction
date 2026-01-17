@@ -14,7 +14,7 @@ from .environment import get_environment, get_git_hash, get_package_versions
 from .organizer import ExperimentOrganizer, create_group
 from .comparison import ExperimentComparator
 from .config_parser import ExperimentConfig, ConfigParser
-from .adapters import BaseAdapter, AdapterRegistry
+from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
 
 __all__ = [
     "ExperimentTracker",
@@ -29,5 +29,7 @@ __all__ = [
     "ExperimentConfig",
     "ConfigParser",
     "BaseAdapter",
-    "AdapterRegistry"
+    "AdapterRegistry",
+    "PyTorchAdapter",
+    "SklearnAdapter"
 ]
