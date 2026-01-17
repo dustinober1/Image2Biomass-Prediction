@@ -49,6 +49,13 @@ def get_kmeans_features(img_path):
             # Center RGB
             r, g, b = centers[i]
             
+            # Texture: Std Dev of pixels in this cluster
+            cluster_pixels = pixels[mask]
+            if len(cluster_pixels) > 1:
+                r_std, g_std, b_std = np.std(cluster_pixels, axis=0)
+            else:
+                r_std, g_std, b_std = 0.0, 0.0, 0.0
+            
             # Calculate "Greenness" for sorting
             # ExG = 2G - R - B
             exg = 2*g - r - b
@@ -57,6 +64,7 @@ def get_kmeans_features(img_path):
                 'id': i,
                 'fraction': fraction,
                 'R': r, 'G': g, 'B': b,
+                'R_std': r_std, 'G_std': g_std, 'B_std': b_std,
                 'ExG': exg
             })
             
@@ -78,6 +86,9 @@ def get_kmeans_features(img_path):
             features[f'KM_{p}_R'] = props['R']
             features[f'KM_{p}_G'] = props['G']
             features[f'KM_{p}_B'] = props['B']
+            features[f'KM_{p}_R_std'] = props['R_std']
+            features[f'KM_{p}_G_std'] = props['G_std']
+            features[f'KM_{p}_B_std'] = props['B_std']
             features[f'KM_{p}_ExG'] = props['ExG']
             
         return features

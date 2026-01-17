@@ -173,5 +173,17 @@ We generated Out-of-Fold (OOF) predictions for the entire dataset:
 - **Cross-Validation OOF RMSE**: **11.34**.
 - **Significance**: While higher than the single-split 6.64, 11.34 represents a **robust and reliable performance estimate**. It shows a clear improvement over the best base model (11.74).
 
-## Final Conclusion
-Experiment 8 (Hierarchical Stacking) provides the most robust and production-ready biomass predictor by combining deep learning, tabular models, and unsupervised segmentation across multiple data folds.
+## Phase 8: Component & Multi-Task Refinement
+
+### 1. Experiment 9 (Advanced TAS: Texture-Augmented Segmentation)
+- **Goal**: Add texture statistics (Standard Deviation) to K-Means segments.
+- **Result**: Validation RMSE: **13.57**.
+- **Insight**: Standard deviation of pixel colors provides a proxy for biomass density/coarseness. This improved on simple color fraction (Experiment 6) but remained behind the Metadata-heavy stacking ensemble.
+
+### 2. Experiment 10 (Multi-Task CNN)
+- **Goal**: Train ResNet18 with auxiliary heads for `Height` and `NDVI` to guide feature learning.
+- **Result**: Validation RMSE: **30.25**.
+- **Insight**: While auxiliary targets slightly stabilized the CNN compared to the raw baseline (RMSE 32+), the fundamental data scarcity (N=357) prevents deep models from generalizing as well as the tabular and ensemble approaches.
+
+## Final Project Conclusion
+The combination of **Tabular Metadata Models**, **Unsupervised K-Means Segmentation**, and **Hierarchical Stacking** remains the state-of-the-art approach for this dataset. The most robust estimate of performance is the 5-Fold CV OOF RMSE of **11.34**.

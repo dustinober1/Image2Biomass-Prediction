@@ -27,4 +27,11 @@
     - **Result**: Cross-Validation (CV) OOF RMSE: **11.34**.
     - **Significance**: While 11.34 is higher than the previous 6.64 (which was on a single split), it represents a significantly more robust and stable performance estimate. Stacking improved over the best base model (Tabular 11.73).
 - **Submission**: `submission_stacking.csv` generated.
+
+- **Phase 8 Complete**: TAS and Multi-Task CNN.
+- **Results**: 
+    - TAS (RMSE 13.57) showed texture helps color-based models.
+    - Multi-Task CNN (RMSE 30.25) confirmed deep learning limits on small data.
+- **Status**: Research Phase Concluded. Best Pipeline: Hierarchical Stacking.
+
 - **Status**: Production-Ready Ensemble Finalized.
