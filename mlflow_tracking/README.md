@@ -17,7 +17,7 @@ This framework provides a Python SDK for tracking ML experiments that addresses 
 Install dependencies:
 
 ```bash
-pip install mlflow numpy pandas scikit-learn
+pip install mlflow numpy pandas scikit-learn scipy
 ```
 
 The framework uses MLflow with a local SQLite backend by default - no additional setup required.
@@ -411,6 +411,164 @@ tags.model_type = "xgboost"
 - View artifacts (saved models, plots, CSVs)
 - Check git commit and package versions for reproducibility
 
+### Comparison and Analysis
+
+Compare multiple experiments side-by-side, aggregate results, and generate insights through clustering, correlation, and outlier detection.
+
+#### ExperimentComparator
+
+The `ExperimentComparator` class provides methods for comparing experiments by IDs, groups, or filters, exporting results, and generating insights.
+
+**Initialization:**
+```python
+from mlflow_tracking import ExperimentComparator
+
+comparator = ExperimentComparator()
+```
+
+**Compare by run IDs:**
+```python
+# Compare specific runs by their IDs
+run_ids = ["abc123", "def456", "ghi789"]
+df = comparator.compare_by_ids(run_ids)
+
+# Returns DataFrame with params, metrics, tags for each run
+print(df[["run_id", "metrics.val_rmse", "params.n_estimators"]])
+
+# Get dict format instead of DataFrame
+results = comparator.compare_by_ids(run_ids, as_dataframe=False)
+```
+
+**Compare by group:**
+```python
+# Compare all runs in an experiment group
+df = comparator.compare_by_group("hyperparameter_tuning")
+
+# Sorted by primary metric (val.rmse ascending)
+print(df[["run_id", "metrics.val_rmse", "metrics.test.rmse"]])
+```
+
+**Compare by filter:**
+```python
+# Use MLflow filter syntax
+df = comparator.compare_by_filter("metrics.val_rmse < 10.0")
+
+# Combined filters
+df = comparator.compare_by_filter(
+    "params.model_type = 'xgboost' and metrics.test_rmse < 15.0"
+)
+```
+
+**Required metrics validation:**
+```python
+# Validate that all required metrics are present
+comparator.validate_required_metrics(
+    df,
+    required_metrics=["train.rmse", "val.rmse", "test.rmse"]
+)
+# Raises ValueError if any metrics are missing
+```
+
+#### Export Methods
+
+Export comparison results to various formats for reporting and sharing.
+
+**Export to CSV:**
+```python
+comparator.to_csv(df, "results/experiment_comparison.csv")
+```
+
+**Export to JSON:**
+```python
+comparator.to_json(df, "results/experiment_comparison.json")
+```
+
+**Export to Excel:**
+```python
+# Requires openpyxl: pip install openpyxl
+comparator.to_excel(df, "results/experiment_comparison.xlsx")
+```
+
+#### Insights Generation
+
+Generate insights through clustering, correlation analysis, and outlier detection.
+
+**Clustering experiments:**
+```python
+# Group similar experiments using K-means
+clusters = comparator.cluster_runs(df, n_clusters=3)
+
+print(f"Found {clusters['n_clusters']} clusters")
+print(f"Cluster labels: {clusters['cluster_labels']}")
+print(f"Inertia (within-cluster variance): {clusters['inertia']}")
+
+# Analyze which runs are in each cluster
+for i, label in enumerate(clusters['cluster_labels']):
+    print(f"Run {df.iloc[i]['run_id']}: Cluster {label}")
+```
+
+**Correlation analysis:**
+```python
+# Find correlations between parameters and metrics
+corr = comparator.correlate_params(
+    df,
+    method="pearson",  # or "spearman"
+    threshold=0.5  # minimum absolute correlation
+)
+
+# Shows which params most strongly affect metrics
+print(corr.sort_values("correlation", ascending=False))
+#    param           metric          correlation
+#    n_estimators    val_rmse        -0.82
+#    max_depth       train_rmse      -0.65
+#    learning_rate   val_r2          0.71
+```
+
+**Outlier detection:**
+```python
+# Identify anomalous experiments
+outliers = comparator.find_outliers(
+    df,
+    method="zscore",  # or "iqr"
+    threshold=3.0
+)
+
+print(f"Found {len(outliers['outlier_runs'])} outliers")
+for run_id in outliers['outlier_runs']:
+    score = outliers['outlier_scores'][run_id]
+    print(f"  {run_id}: outlier score = {score:.2f}")
+```
+
+#### Complete Workflow Example
+
+```python
+from mlflow_tracking import ExperimentComparator
+
+comparator = ExperimentComparator()
+
+# Step 1: Load all experiments from group
+df = comparator.compare_by_group("hyperparameter_tuning")
+print(f"Loaded {len(df)} experiments")
+
+# Step 2: Filter to best performing runs
+best_runs = df[df['metrics.val_rmse'] < 10.0]
+print(f"Found {len(best_runs)} high-performing runs")
+
+# Step 3: Cluster similar runs
+clusters = comparator.cluster_runs(best_runs, n_clusters=2)
+
+# Step 4: Find key parameter correlations
+corr = comparator.correlate_params(best_runs, threshold=0.3)
+print(f"Top correlation: {corr.iloc[0]['param']} <-> {corr.iloc[0]['metric']}")
+
+# Step 5: Check for outliers
+outliers = comparator.find_outliers(best_runs, threshold=2.0)
+print(f"Found {len(outliers['outlier_runs'])} outliers")
+
+# Step 6: Export results
+comparator.to_csv(best_runs, "results/best_runs.csv")
+```
+
 ## Requirements Coverage
 
 This framework addresses the following requirements from Phase 1 and Phase 2:
@@ -453,6 +611,22 @@ This framework addresses the following requirements from Phase 1 and Phase 2:
   - Implemented: MLflow built-in UI at `http://localhost:5000`
   - Implemented: Visual comparison of runs, artifacts, and metadata
   - Implemented: Search and filter in UI
+
+### Analysis (ANALYSIS-01 through ANALYSIS-03)
+
+- **ANALYSIS-01**: Compare metrics side-by-side across multiple experiments
+  - Implemented: `ExperimentComparator.compare_by_ids()` for explicit run comparison
+  - Implemented: `ExperimentComparator.compare_by_group()` for group-wide comparison
+  - Implemented: `ExperimentComparator.compare_by_filter()` for filtered comparison
+  - Implemented: DataFrame and dict output formats via `as_dataframe` parameter
+- **ANALYSIS-02**: Aggregate results from multiple experiments into structured format
+  - Implemented: `to_csv()`, `to_json()`, `to_excel()` export methods
+  - Implemented: Wide format output (rows=experiments, columns=params/metrics/tags)
+  - Implemented: `validate_required_metrics()` for metric validation
+- **ANALYSIS-03**: Generate insights by clustering experiment results and identifying patterns
+  - Implemented: `cluster_runs()` for K-means clustering analysis
+  - Implemented: `correlate_params()` for param-metric correlation analysis
+  - Implemented: `find_outliers()` for z-score and IQR outlier detection
 
 ## Best Practices
 
@@ -769,27 +943,38 @@ See `mlflow_tracking/test_organization.py` for organization and discovery exampl
 - Finding best runs
 - Using MLflow UI for exploration
 
+See `mlflow_tracking/test_comparison.py` for comparison and analysis examples:
+
+- Comparing experiments by IDs, groups, and filters
+- Exporting results to CSV, JSON, and Excel
+- Clustering experiments to identify patterns
+- Correlation analysis between parameters and metrics
+- Outlier detection for anomalous runs
+
 Run the examples:
 
 ```bash
 python mlflow_tracking/full_example.py
 python mlflow_tracking/test_organization.py
+python mlflow_tracking/test_comparison.py
 ```
 
 ## Architecture
 
 ```
 mlflow_tracking/
-├── __init__.py           # Package exports
-├── tracker.py            # ExperimentTracker class (with tagging methods)
-├── organizer.py          # ExperimentOrganizer class (grouping & search)
-├── data_split.py         # DataSplitter class
-├── environment.py        # Environment capture functions
-├── config.py             # MLflow configuration
-├── full_example.py       # Complete working example
-├── test_organization.py  # Organization features demo
-├── test_splits.py        # Data split validation tests
-└── README.md             # This file
+├── __init__.py            # Package exports
+├── tracker.py             # ExperimentTracker class (with tagging methods)
+├── organizer.py           # ExperimentOrganizer class (grouping & search)
+├── comparison.py          # ExperimentComparator class (comparison & analysis)
+├── data_split.py          # DataSplitter class
+├── environment.py         # Environment capture functions
+├── config.py              # MLflow configuration
+├── full_example.py        # Complete working example
+├── test_organization.py   # Organization features demo
+├── test_comparison.py     # Comparison & analysis features demo
+├── test_splits.py         # Data split validation tests
+└── README.md              # This file
 ```
 
 ## Data Storage
@@ -805,9 +990,10 @@ mlflow_tracking/
 - Research on pitfalls: `.planning/research/PITFALLS.md`
 - Phase 1 plan: `.planning/phases/01-experiment-tracking-foundation/01-04-PLAN.md`
 - Phase 2 plan: `.planning/phases/02-organization-discovery/02-01-PLAN.md`
+- Phase 3 plan: `.planning/phases/03-analysis-comparison/03-01-PLAN.md`
 
 ---
 
-**Version**: 0.2.0
+**Version**: 0.3.0
 **Last updated**: 2026-01-17
-**Phase**: 2 - Organization & Discovery
+**Phase**: 3 - Analysis & Comparison
