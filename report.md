@@ -129,14 +129,16 @@ The Test Set (N=samples) contained **only images**, missing the critical metadat
 ### Experiment 4: Stronger Backbone (EfficientNet) + TTA
 - **Goal**: Use `EfficientNet-B0` with Test-Time Augmentation (Flip/Rotate) to maximize image feature extraction.
 - **Results**:
-    - **Validation RMSE**: Started high (~29.0), converging slowly (~22.0 at Epoch 2).
-    - **Conclusion**: Even with a better architecture, the lack of training data (357 images) prevents the model from learning effectively compared to the simple features in Exp 2.
+    - **Validation RMSE**: **12.70** (Best Epoch).
+    - **TTA Improvement**: Test-Time Augmentation (3x) reduced RMSE further to **12.18**.
+    - **Conclusion**: Ideally a strong model, but still slightly worse than the Tabular Baseline (10.9) and significantly more computationally expensive. However, it beat the Hand-Crafted Features (17.9).
 
 ### Experiment 5: Pseudo-Labeling (Distillation)
 - **Goal**: Distill the predictions from the Study's Best Model (Exp 1 + Tabular) back into an Image Model.
 - **Results**:
+    - **Best Distilled RMSE**: **10.54**.
+    - **Caveat**: The validation set for this experiment included original training data, so this metric is slightly optimistic (effectively training set error).
     - **Limitation**: The provided `test.csv` contained only **1 unique image**, essentially rendering pseudo-labeling ineffective for this specific demo dataset.
-    - **Status**: Pipeline validated, but impact negligible due to test set size.
 
 ## Final Recommendation & Submission
 **Strategy 1 (Metadata Proxy)** is the recommended path.
