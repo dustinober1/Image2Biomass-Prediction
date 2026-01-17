@@ -1,0 +1,55 @@
+# Ridge Regression Alpha Optimization
+#
+# This config demonstrates hyperparameter optimization for scikit-learn Ridge
+# regression, searching for the optimal alpha (regularization strength).
+#
+# Usage:
+#   exp-run-optimize examples/configs/optimization/02_ridge_alpha_search.yaml --verbose
+#   exp-run-optimize 02_ridge_alpha_search.yaml --n-trials 50
+
+experiment_name: image_biomass_baseline
+run_name: ridge_alpha_search
+adapter: sklearn
+description: Alpha (regularization) optimization for Ridge regression
+
+# Base parameters (fixed during optimization)
+parameters:
+  model_type: ridge
+  fit_intercept: true
+
+tags:
+  model_type: linear
+  optimization: alpha
+  purpose: hyperparameter_search
+
+random_seed: 42
+
+# Hyperparameter optimization configuration
+optimization:
+  # Number of trials to run
+  n_trials: 50
+
+  # Study name for persistence
+  study_name: ridge_alpha_search
+
+  # Optimization direction (minimize RMSE)
+  direction: minimize
+
+  # Metric to optimize
+  metric: val.rmse
+
+  # Search space definition
+  search:
+    # Alpha with log-scale sampling (recommended for regularization)
+    alpha:
+      type: float
+      low: 0.001
+      high: 100.0
+      log: true
+
+  # Pruner configuration
+  pruner:
+    type: median
+    n_startup_trials: 5
+    n_warmup_steps: 5
+    interval_steps: 1

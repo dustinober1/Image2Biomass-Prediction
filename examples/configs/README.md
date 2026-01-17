@@ -346,3 +346,117 @@ Example batch configurations are in `examples/configs/batch/`:
 These configs demonstrate running multiple experiments with different
 hyperparameters in parallel, dramatically reducing wall-clock time.
 
+## Hyperparameter Optimization
+
+Automated hyperparameter search using Optuna with efficient pruning and MLflow logging.
+
+### CLI Usage
+
+```bash
+# Run optimization study
+exp-run-optimize examples/configs/optimization/01_effnet_lr_search.yaml --verbose
+
+# Override trial count for quick testing
+exp-run-optimize 01_effnet_lr_search.yaml --n-trials 20
+
+# Run parallel trials
+exp-run-optimize 01_effnet_lr_search.yaml --n-jobs 4 --verbose
+
+# Auto-detect parallel jobs
+exp-run-optimize 01_effnet_lr_search.yaml --n-jobs -1
+```
+
+### Optimization Config Schema
+
+Add an `optimization` section to your YAML config:
+
+```yaml
+experiment_name: image_biomass_baseline
+run_name: effnet_lr_search
+adapter: pytorch
+parameters:
+  model_name: efficientnet_b0
+  batch_size: 16
+  epochs: 30
+tags:
+  model_type: cnn
+  optimization: learning_rate
+random_seed: 42
+
+optimization:
+  n_trials: 100                    # Number of trials
+  study_name: lr_search            # Study name for persistence
+  direction: minimize               # "minimize" or "maximize"
+  metric: val.rmse                  # Metric to optimize
+  search:                           # Search space definition
+    learning_rate:
+      type: float
+      low: 0.00001
+      high: 0.1
+      log: true                     # Log-scale sampling
+  pruner:                           # Optional pruner config
+    type: median
+    n_startup_trials: 5
+    n_warmup_steps: 10
+```
+
+### Search Space Types
+
+**Float parameters** (continuous values):
+```yaml
+search:
+  learning_rate:
+    type: float
+    low: 1e-5
+    high: 1e-1
+    log: true    # Use log-scale for ratios (LR, alpha, etc.)
+```
+
+**Integer parameters** (discrete values):
+```yaml
+search:
+  batch_size:
+    type: int
+    low: 8
+    high: 64
+    step: 8     # Will try 8, 16, 24, ..., 64
+```
+
+**Categorical parameters** (discrete choices):
+```yaml
+search:
+  optimizer:
+    type: categorical
+    choices: [adam, sgd, adamw]
+```
+
+### Output
+
+After optimization completes:
+
+1. **Best config saved** as `config_name_best.yaml`
+2. **Best hyperparameters** printed to console
+3. **All trials logged** to MLflow for analysis
+
+```bash
+# Run final experiment with best hyperparameters
+exp-run examples/configs/optimization/01_effnet_lr_search_best.yaml
+```
+
+### Example Optimization Configs
+
+- `01_effnet_lr_search.yaml` - Learning rate optimization (log-scale)
+- `02_ridge_alpha_search.yaml` - Alpha regularization search
+- `03_xgboost_multi_param.yaml` - Multi-parameter optimization (5 params)
+
+For detailed documentation, see [optimization/README.md](optimization/README.md).
+
+### Key Features
+
+- **Bayesian optimization**: Learns from previous trials
+- **Pruning**: Stops underperforming trials early
+- **Parallel trials**: Multiple concurrent trials (`--n-jobs`)
+- **MLflow integration**: All trials logged for analysis
+- **Study persistence**: Resume interrupted studies
+- **Best config export**: Ready-to-run config with optimal hyperparameters
+

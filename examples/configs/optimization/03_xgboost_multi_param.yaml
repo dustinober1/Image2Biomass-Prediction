@@ -1,0 +1,82 @@
+# XGBoost Multi-Parameter Optimization
+#
+# This config demonstrates multi-parameter hyperparameter optimization
+# for XGBoost, searching over learning rate, max depth, and n_estimators.
+#
+# Usage:
+#   exp-run-optimize examples/configs/optimization/03_xgboost_multi_param.yaml --verbose
+#   exp-run-optimize 03_xgboost_multi_param.yaml --n-trials 100 --n-jobs 4
+
+experiment_name: image_biomass_baseline
+run_name: xgboost_multi_param_search
+adapter: sklearn
+description: Multi-parameter optimization for XGBoost
+
+# Base parameters (fixed during optimization)
+parameters:
+  model_type: xgboost
+
+tags:
+  model_type: gradient_boosting
+  optimization: multi_param
+  purpose: hyperparameter_search
+
+random_seed: 42
+
+# Hyperparameter optimization configuration
+optimization:
+  # Number of trials to run
+  n_trials: 100
+
+  # Study name for persistence
+  study_name: xgboost_multi_param_search
+
+  # Optimization direction (minimize RMSE)
+  direction: minimize
+
+  # Metric to optimize
+  metric: val.rmse
+
+  # Search space definition (multiple parameters)
+  search:
+    # Learning rate (log-scale)
+    learning_rate:
+      type: float
+      low: 0.001
+      high: 0.3
+      log: true
+
+    # Max depth (int parameter with step)
+    max_depth:
+      type: int
+      low: 3
+      high: 10
+      step: 1
+
+    # Number of estimators (int parameter)
+    n_estimators:
+      type: int
+      low: 50
+      high: 500
+      step: 50
+
+    # Subsample ratio (float, linear scale)
+    subsample:
+      type: float
+      low: 0.5
+      high: 1.0
+      log: false
+
+    # Column subsample ratio
+    colsample_bytree:
+      type: float
+      low: 0.5
+      high: 1.0
+      log: false
+
+  # Hyperband pruner for aggressive early stopping
+  pruner:
+    type: hyperband
+    min_resource: 1
+    max_resource: 100
+    reduction_factor: 3
