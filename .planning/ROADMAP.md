@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Experiment Tracking Foundation** - Core tracking and reproducibility infrastructure (completed 2025-01-17)
 - [x] **Phase 2: Organization & Discovery** - Grouping, tagging, and searching experiments (completed 2025-01-17)
 - [x] **Phase 3: Analysis & Comparison** - Metrics comparison and results aggregation (completed 2026-01-17)
-- [ ] **Phase 4: Configuration System** - YAML-driven experiment definitions
+- [x] **Phase 4: Configuration System** - YAML-driven experiment definitions (completed 2026-01-17)
 - [ ] **Phase 5: Script Adapters & Auto-Logging** - Integration with existing 29 training scripts
 - [ ] **Phase 6: Parallel Execution Infrastructure** - Batch execution and resource management
 - [ ] **Phase 7: Hyperparameter Optimization** - Optuna integration with pruning
@@ -98,10 +98,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Plans**: 4 plans in 3 waves
 
-- [ ] 04-01-PLAN.md — Design YAML schema and create abstract adapter interface (Wave 1)
-- [ ] 04-02-PLAN.md — Implement configuration parser with Jinja2 templating and sweep expansion (Wave 2)
-- [ ] 04-03-PLAN.md — Build CLI entry point `exp-run` for executing experiments (Wave 3)
-- [ ] 04-04-PLAN.md — Implement concrete adapters for PyTorch and sklearn scripts (Wave 3, checkpoint:human-verify)
+- [x] 04-01-PLAN.md — Design YAML schema and create abstract adapter interface (Wave 1) ✓ Complete
+- [x] 04-02-PLAN.md — Implement configuration parser with Jinja2 templating and sweep expansion (Wave 2) ✓ Complete
+- [x] 04-03-PLAN.md — Build CLI entry point `exp-run` for executing experiments (Wave 3) ✓ Complete
+- [x] 04-04-PLAN.md — Implement concrete adapters for PyTorch and sklearn scripts (Wave 3, checkpoint:human-verify) ✓ Complete
 
 ### Phase 5: Script Adapters & Auto-Logging
 
@@ -153,8 +153,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 3. Analysis & Comparison | 1/1 | ✓ Complete | 2026-01-17 |
-| 4. Configuration System | 0/4 | Not started | - |
+| 4. Configuration System | 4/4 | ✓ Complete | 2026-01-17 |
 | 5. Script Adapters & Auto-Logging | 0/TBD | Not started | - |
 | 6. Parallel Execution Infrastructure | 0/TBD | Not started | - |
 | 7. Hyperparameter Optimization | 0/TBD | Not started | - |

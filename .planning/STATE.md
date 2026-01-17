@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2025-01-17)
 
 **Core value:** Understand what drives biomass predictions through systematic experimentation
-**Current focus:** Phase 4: Configuration System (next phase)
+**Current focus:** Phase 5: Script Adapters & Auto-Logging (next phase)
 
 ## Current Position
 
