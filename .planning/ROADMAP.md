@@ -96,7 +96,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 3. User can use parameter templating and variable substitution for systematic sweeps
 4. Framework wraps existing 29 training scripts via adapter pattern (no script modifications required)
 
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
+
+- [ ] 04-01-PLAN.md — Design YAML schema and create abstract adapter interface (Wave 1)
+- [ ] 04-02-PLAN.md — Implement configuration parser with Jinja2 templating and sweep expansion (Wave 2)
+- [ ] 04-03-PLAN.md — Build CLI entry point `exp-run` for executing experiments (Wave 3)
+- [ ] 04-04-PLAN.md — Implement concrete adapters for PyTorch and sklearn scripts (Wave 3, checkpoint:human-verify)
 
 ### Phase 5: Script Adapters & Auto-Logging
 
@@ -149,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 3. Analysis & Comparison | 1/1 | ✓ Complete | 2026-01-17 |
-| 4. Configuration System | 0/TBD | Not started | - |
+| 4. Configuration System | 0/4 | Not started | - |
 | 5. Script Adapters & Auto-Logging | 0/TBD | Not started | - |
 | 6. Parallel Execution Infrastructure | 0/TBD | Not started | - |
 | 7. Hyperparameter Optimization | 0/TBD | Not started | - |
