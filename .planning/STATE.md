@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2025-01-17)
 ## Current Position
 
 Phase: 4 of 7 (Configuration System)
-Plan: 4 of 4
-Status: Plan complete
-Last activity: 2026-01-17 — Completed Phase 4 Plan 4 (Concrete Adapter Implementations)
+Plan: 3 of 4
+Status: In progress
+Last activity: 2026-01-17 — Completed Phase 4 Plan 3 (CLI Tool)
 
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100%
+Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [████████░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 11
 - Average duration: 3.0 min
 - Total execution time: 0.6 hours
 
@@ -30,10 +30,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 01-experiment-tracking-foundation | 4 | 4 | 4.0 min |
 | 02-organization-discovery | 1 | 1 | 5.0 min |
 | 03-analysis-comparison | 1 | 1 | 3.0 min |
-| 04-configuration-system | 4 | 4 | 2.5 min |
+| 04-configuration-system | 3 | 3 | 2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 2.6 min avg (12 plans total)
+- Last 5 plans: 2.8 min avg (11 plans total)
 
 *Updated after each plan completion*
 
@@ -102,19 +102,10 @@ Recent decisions affecting current work:
 
 **From 04-03-PLAN.md (CLI Tool):**
 - Use argparse for CLI argument parsing (standard library, well-documented)
-- Implement --sweep flag to expand parameter sweeps before execution
-- Use --verbose flag for detailed execution output
-- Handle adapter failures gracefully with clear error messages
-- Support --dry-run flag for config validation without execution
-
-**From 04-04-PLAN.md (Concrete Adapter Implementations):**
-- Use subprocess.run() for script execution (separation of concerns, scripts run in separate process)
-- Parse JSON from stdout for metrics (simple, language-agnostic, works with any script that prints JSON)
-- Convert underscore keys to dot notation for MLflow (train_rmse -> train.rmse for consistent metric hierarchy)
-- Adapters return metrics dict; CLI logs to MLflow (separation of adapter execution from logging)
-- Register adapters via decorator (@AdapterRegistry.register) for clean registration pattern
-- Validate required parameters in validate_config() before execution (fail fast with clear error messages)
-- 3-step pattern for wrapping remaining scripts: register adapter, validate config, execute script
+- Return exit codes (0=success, 1=failure) for shell scripting integration
+- Add mark_failed() method to ExperimentTracker for explicit error tracking
+- Use setuptools console_scripts for CLI installation (standard Python packaging)
+- Export CLI functions from package for both CLI and programmatic usage
 
 ### Pending Todos
 
@@ -130,9 +121,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17 17:23 UTC
-Completed: Phase 4 Plan 4 (Concrete Adapter Implementations) - All 4 tasks complete
-Next: Phase 5 (next phase based on ROADMAP)
+Last session: 2026-01-17 17:24 UTC
+Completed: Phase 4 Plan 3 (CLI Tool) - All 4 tasks complete
+Next: Phase 4 Plan 4 (Concrete Adapter Implementations)
 Resume file: None
 
 ## Phase 3 Deliverables
@@ -222,65 +213,34 @@ ConfigParser complete with YAML loading, sweep expansion, and adapter validation
 
 All requirements satisfied:
 
-- ✓ CLI entry point (exp-run) for experiment execution
-- ✓ Argument parsing for config file path, sweep expansion, dry-run, verbose mode
+- ✓ CLI entry point (exp-run) for experiment execution via argparse
+- ✓ Argument parsing with --sweep and --verbose flags
 - ✓ Integration with ConfigParser for YAML loading and validation
 - ✓ Integration with AdapterRegistry for adapter retrieval
 - ✓ Integration with ExperimentTracker for MLflow logging
-- ✓ Error handling for missing configs, invalid adapters, script failures
+- ✓ Error handling with try/except and tracker.mark_failed()
+- ✓ setup.py with console_scripts entry point
+- ✓ test_cli.py demonstrating CLI and programmatic usage
+- ✓ CLI functions exported from mlflow_tracking package
 
 ### Files Created
-- `mlflow_tracking/cli.py` - CLI entry point with argparse (150+ lines)
-- `setup.py` - Package setup with console_scripts entry point
-- `mlflow_tracking/test_cli.py` - CLI usage demonstration
+- `mlflow_tracking/cli.py` - CLI entry point with main() and exp_run_command() (145 lines)
+- `setup.py` - Package configuration with console_scripts entry point (28 lines)
+- `mlflow_tracking/test_cli.py` - CLI usage demonstration (100 lines)
+- `.planning/phases/04-configuration-system**---yaml-driven-experiment-definitions/04-03-SUMMARY.md` - Plan summary
 
 ### Files Modified
-- None (CLI is new module)
+- `mlflow_tracking/__init__.py` - Added exports for main and exp_run_command
+- `mlflow_tracking/tracker.py` - Added mark_failed() method for error tracking (28 lines added)
 
-**Total Plan 03**: 250+ lines of code
+**Total Plan 03**: 401+ lines of code and documentation
+
+### Deviations from Plan
+**1. [Rule 2 - Missing Critical] Added mark_failed() method to ExperimentTracker**
+- CLI calls `tracker.mark_failed()` but method didn't exist
+- Added method that logs error_message as MLflow tag and calls end_run(status="failed")
+- Committed in: 66f82f6 (part of Task 1 commit)
 
 ### Ready for Next Plan
 CLI tool complete with config loading, adapter execution, and MLflow logging. Ready to implement concrete adapters (04-04) that demonstrate the pattern for wrapping training scripts.
-
-### Plan 4: Concrete Adapter Implementations (04-04)
-
-**Completed: 2026-01-17**
-
-All requirements satisfied:
-
-- ✓ PyTorchAdapter implements execute() and validate_config()
-- ✓ SklearnAdapter implements execute() and validate_config()
-- ✓ Both adapters registered and retrievable via AdapterRegistry
-- ✓ Both adapters return metrics dict (CLI logs to MLflow)
-- ✓ Example configs demonstrate pytorch and sklearn adapter usage
-- ✓ README.md documents 3-step pattern for wrapping remaining 27 scripts
-
-### Files Created
-- `examples/configs/adapter_examples/pytorch_effnet.yaml` - PyTorch EfficientNet config with parameter sweep
-- `examples/configs/adapter_examples/sklearn_ridge.yaml` - Ridge regression config with alpha sweep
-- `examples/configs/adapter_examples/xgboost_advanced.yaml` - XGBoost config with tree hyperparameter sweep
-- `.planning/phases/04-configuration-system**---yaml-driven-experiment-definitions/04-04-SUMMARY.md` - Plan summary
-
-### Files Modified
-- `mlflow_tracking/adapters.py` - Added PyTorchAdapter and SklearnAdapter classes (249 lines added)
-- `examples/configs/README.md` - Added "Creating Adapters for Additional Scripts" section with 3-step pattern
-- `mlflow_tracking/__init__.py` - Added PyTorchAdapter and SklearnAdapter to exports
-
-**Total Plan 04**: 400+ lines of code and documentation
-
-### Phase 4 Complete
-Configuration system fully implemented with:
-- YAML schema validation (04-01)
-- Config parser with sweep expansion (04-02)
-- CLI tool for experiment execution (04-03)
-- Concrete adapter implementations (04-04)
-
-### Ready for Next Phase
-Configuration system complete. Users can now:
-- Define experiments in YAML configs
-- Run experiments via CLI: exp-run config.yaml
-- Execute parameter sweeps automatically
-- Wrap additional training scripts using 3-step adapter pattern
-
-Ready for Phase 5 (based on ROADMAP).
 
