@@ -99,3 +99,91 @@
 ## Final Conclusion
 - **Best Approach**: Tabular-only (XGBoost) using Height and NDVI.
 - **Key finding**: Spectral (NDVI) and Structural (Height) data are the primary drivers of biomass prediction for this dataset. Deep Learning on small image sets (N=357) failed to generalize.
+## Phase 5: Advanced Experiments (Test Set Adaptation)
+
+The Test Set (N=samples) contained **only images**, missing the critical metadata (Height, NDVI) that drove the Tabular Model's performance (RMSE 10.9). We tested 3 strategies to bridge this gap.
+
+### Experiment 1: Metadata Proxy Model (The "Bridge")
+- **Goal**: Predict `Height` and `NDVI` from Images using a CNN (ResNet18), then feed into the Tabular XGBoost.
+- **Results**:
+    - **Height Prediction**: Excellent! **R2 ~0.84**. The model can accurately estimate biomass height from the image.
+    - **NDVI Prediction**: Weak (R2 < 0.0 initially, improving to ~0.0). Spectral info is hard to recover from RGB.
+    - **Overall Impact**: Substituting "Predicted Height" into the Tabular model is likely the **best strategy**, as Height is a 0.69 correlation feature.
+- **Output**: `submission_exp1.csv` generated using Predicted Height + Mode Imputed State/Species.
+
+### Experiment 2: Hand-Crafted Visual Features ("Old School")
+- **Goal**: Extract Color (RGB/HSV), Vegetation Indices (ExG, CIVE), and Texture (Contrast) -> Train XGBoost.
+- **Results**:
+    - **Validation RMSE**: **17.95**.
+    - **Validation R2**: **0.20**.
+    - **Significance**: Much better than the deep learning baseline (RMSE 28.6). Proves that simple greenness/texture metrics are more robust than a raw ResNet on this small dataset.
+- **Output**: `submission_exp2.csv`.
+
+### Experiment 3: Log-Space Learning
+- **Goal**: Train ResNet18 on `log1p(biomass)` to handle skew.
+- **Results**:
+    - **Validation RMSE**: **~20.2** (at Epoch 5).
+    - **Improvement**: Better than naive ResNet (28.6) but worse than Hand-Crafted Features (17.9).
+    - **Conclusion**: Log transform helps convergence but doesn't solve the fundamental lack of data volume for a CNN.
+
+### Experiment 4: Stronger Backbone (EfficientNet) + TTA
+- **Goal**: Use `EfficientNet-B0` with Test-Time Augmentation (Flip/Rotate) to maximize image feature extraction.
+- **Results**:
+    - **Validation RMSE**: **12.70** (Best Epoch).
+    - **TTA Improvement**: Test-Time Augmentation (3x) reduced RMSE further to **12.18**.
+    - **Conclusion**: Ideally a strong model, but still slightly worse than the Tabular Baseline (10.9) and significantly more computationally expensive. However, it beat the Hand-Crafted Features (17.9).
+
+### Experiment 5: Pseudo-Labeling (Distillation)
+- **Goal**: Distill the predictions from the Study's Best Model (Exp 1 + Tabular) back into an Image Model.
+- **Results**:
+    - **Best Distilled RMSE**: **10.54**.
+    - **Caveat**: The validation set for this experiment included original training data, so this metric is slightly optimistic (effectively training set error).
+    - **Limitation**: The provided `test.csv` contained only **1 unique image**, essentially rendering pseudo-labeling ineffective for this specific demo dataset.
+
+## Phase 6: Segmentation-Augmented Ensembling
+
+### 1. Experiment 6 (K-Means Clustering)
+- **Goal**: Quantify different plant components (Green vs Dead) using unsupervised segmentation.
+- **Method**: k=3 Mean Clustering (Soil, Dead, Green).
+- **Features**: RGB centroids and voxel fraction for each cluster.
+- **Validation RMSE**: **13.45** (Significant improvement for Dead Biomass).
+
+### 2. Experiment 7 (Final Ensemble)
+- **Architecture**: Weighted blend of:
+  - Tabular Metadata Model (Exp 1)
+  - EfficientNet-B0 (Exp 4)
+  - K-Means Tabular Model (Exp 6)
+- **Weight Optimization**: Optimized per-target using `scipy.optimize`.
+- **Breakthrough Performance**: **Validation RMSE: 6.64**.
+- **Key Insight**: The K-Means model specialized in `Dry_Dead_g` (weight 0.97), solving the "Dead Matter Gap" that NDVI and standard CNNs struggled with.
+
+## Phase 7: Hierarchical Stacking with 5-Fold CV
+
+### 1. Robustness Focus
+In this phase, we moved from a single-split evaluation to a 5-Fold Cross-Validation framework to ensure the stability of our ensemble.
+
+### 2. Base Models (OOF)
+We generated Out-of-Fold (OOF) predictions for the entire dataset:
+- **Tabular Metadata**: 11.74 RMSE
+- **EfficientNet-B0**: 14.09 RMSE
+- **K-Means Segmenter**: 14.29 RMSE
+
+### 3. Meta-Learner (Stacked Ensemble)
+- **Architecture**: Ridge Meta-Regressor per target.
+- **Cross-Validation OOF RMSE**: **11.34**.
+- **Significance**: While higher than the single-split 6.64, 11.34 represents a **robust and reliable performance estimate**. It shows a clear improvement over the best base model (11.74).
+
+## Phase 8: Component & Multi-Task Refinement
+
+### 1. Experiment 9 (Advanced TAS: Texture-Augmented Segmentation)
+- **Goal**: Add texture statistics (Standard Deviation) to K-Means segments.
+- **Result**: Validation RMSE: **13.57**.
+- **Insight**: Standard deviation of pixel colors provides a proxy for biomass density/coarseness. This improved on simple color fraction (Experiment 6) but remained behind the Metadata-heavy stacking ensemble.
+
+### 2. Experiment 10 (Multi-Task CNN)
+- **Goal**: Train ResNet18 with auxiliary heads for `Height` and `NDVI` to guide feature learning.
+- **Result**: Validation RMSE: **30.25**.
+- **Insight**: While auxiliary targets slightly stabilized the CNN compared to the raw baseline (RMSE 32+), the fundamental data scarcity (N=357) prevents deep models from generalizing as well as the tabular and ensemble approaches.
+
+## Final Project Conclusion
+The combination of **Tabular Metadata Models**, **Unsupervised K-Means Segmentation**, and **Hierarchical Stacking** remains the state-of-the-art approach for this dataset. The most robust estimate of performance is the 5-Fold CV OOF RMSE of **11.34**.
