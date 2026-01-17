@@ -28,10 +28,10 @@
     - **Significance**: While 11.34 is higher than the previous 6.64 (which was on a single split), it represents a significantly more robust and stable performance estimate. Stacking improved over the best base model (Tabular 11.73).
 - **Submission**: `submission_stacking.csv` generated.
 
-- **Phase 9 Complete**: Advanced Grid Suite + Quantile Stacking.
+- **Phase 10 Complete**: Model Explainability & Error Analysis.
 - **Results**: 
-    - Grid Features (Exp 11/12) provided granular spatial-spectral data.
-    - Quantile Stacker (Exp 13) achieved RMSE 11.59, offering a robust alternative to Ridge.
-- **Status**: Research Concluded. Final Pipeline: Hierarchical Multi-Feature Stacker.
+    - SHAP confirmed Metadata dominance with Grid/K-Means corrections.
+    - Error Analysis revealed a prediction ceiling for high-biomass Fescue/Lucerne.
+- **Status**: **Project Concluded**. Final Model: Hierarchical Stacking Ensemble.
 
 - **Status**: Production-Ready Ensemble Finalized.

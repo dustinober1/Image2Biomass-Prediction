@@ -197,11 +197,21 @@ We generated Out-of-Fold (OOF) predictions for the entire dataset:
 - **Result**: Validation OOF RMSE: **11.59**.
 - **Insight**: Quantile loss (alpha=0.5) targets the median, making the ensemble more robust to the high variance in Clover and Dead matter. The non-linear meta-learner effectively integrated the large feature set (81 features) from Phase 9.
 
-## Final Project Conclusion
-The research phase has explored 13 distinct experimental strategies. The ultimate biomass predictor is a **Hierarchical Stacking Ensemble** that combines:
-1.  **Tabular Metadata** (Best for Green Biomass)
-2.  **K-Means Texture-Augmented Segmentation** (Best for Dead Matter)
-3.  **Advanced Grid-Spectral Indices** (Best for Spatial Distribution)
-4.  **Pseudo-Labeling/TTA EfficientNet** (Deep Visual Backbone)
+## Phase 10: Model Explainability & Error Analysis
 
-The most robust performance estimate is a 5-Fold OOF RMSE of **11.34 - 11.59**, representing a stable and generalized solution for the CSIRO competition.
+### 1. Explainability (SHAP)
+- **Goal**: Analyze feature contributions to the final ensemble.
+- **Finding**: 
+    - **Tabular Metadata** (`Height`, `NDVI`) remains the dominant driver for most biomass targets.
+    - **Grid Spectral Indices** (VARI, GLI) provide significant corrections in spatial clusters.
+    - **K-Means Texture** features are the secondary drivers for `Dry_Dead_g`, confirming their role in capturing non-green matter.
+
+### 2. Error Analysis (Hard Sample Discovery)
+- **Goal**: Identify and analyze the highest residual samples in the training set.
+- **Key Insight**: 
+    - The model exhibits a **conservative bias** (under-prediction) on extremely high-biomass samples (>120g).
+    - **Species Variance**: `Fescue` and `Lucerne` show higher average error, likely due to their higher density which saturates standard indices.
+    - **Conclusion**: Future improvements should focus on non-linear saturation corrections or log-space weighting for these high-biomass regimes.
+
+## Final Project Conclusion
+The research phase has explored 13 distinct experimental strategies across 10 phases. The final biomass predictor is a **Hierarchical Stacking Ensemble** (OOF RMSE ~11.4) that leverages metadata, spatial segmentation, and spectral indices. This multifaceted approach provides the most stable and scientifically grounded solution for biomass quantification.
