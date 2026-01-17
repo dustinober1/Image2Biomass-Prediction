@@ -61,7 +61,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 3. User can search and filter experiments by metrics, parameters, and tags
 4. User can view experiments, metrics, and artifacts via web UI
 
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+- [ ] 02-01-PLAN.md — Create ExperimentOrganizer class and extend ExperimentTracker with tagging (Wave 1)
 
 ### Phase 3: Analysis & Comparison
 
@@ -145,7 +147,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Experiment Tracking Foundation | 4/4 | ✓ Complete | 2025-01-17 |
-| 2. Organization & Discovery | 0/TBD | Not started | - |
+| 2. Organization & Discovery | 0/1 | Not started | - |
 | 3. Analysis & Comparison | 0/TBD | Not started | - |
 | 4. Configuration System | 0/TBD | Not started | - |
 | 5. Script Adapters & Auto-Logging | 0/TBD | Not started | - |
