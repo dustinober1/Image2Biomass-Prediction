@@ -13,13 +13,14 @@ from .data_split import DataSplitter, create_canonical_splits
 from .environment import get_environment, get_git_hash, get_package_versions
 from .organizer import ExperimentOrganizer, create_group
 from .comparison import ExperimentComparator
-from .config_parser import ExperimentConfig, ConfigParser
+from .config_parser import ExperimentConfig, ConfigParser, OptimizationConfig, SearchParamConfig
 from .autolog import AutoLogger
 from .seed_manager import SeedManager
 from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
 from .cli import main, exp_run_command, main_batch, exp_run_batch_command
 from .resource_manager import ResourceManager
 from .batch_executor import BatchExecutor, ExperimentResult, BatchProgress
+from .optuna_optimizer import OptunaOptimizer, create_optimization_config, suggest_params_from_trial
 
 __all__ = [
     "ExperimentTracker",
@@ -33,6 +34,8 @@ __all__ = [
     "ExperimentComparator",
     "ExperimentConfig",
     "ConfigParser",
+    "OptimizationConfig",
+    "SearchParamConfig",
     "AutoLogger",
     "SeedManager",
     "BaseAdapter",
@@ -47,4 +50,7 @@ __all__ = [
     "BatchExecutor",
     "ExperimentResult",
     "BatchProgress",
+    "OptunaOptimizer",
+    "create_optimization_config",
+    "suggest_params_from_trial",
 ]

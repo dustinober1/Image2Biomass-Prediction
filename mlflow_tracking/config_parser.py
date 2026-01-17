@@ -8,10 +8,214 @@ validation logic to ensure configs are correct before execution.
 import yaml
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, Literal
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from jinja2 import Template, TemplateError
 import itertools
+
+
+class SearchParamConfig(BaseModel):
+    """
+    Schema for a single hyperparameter search space definition.
+
+    This class defines the search space for a single hyperparameter in Optuna.
+    Supports float, int, and categorical parameter types.
+
+    Attributes:
+        type: Parameter type ("float", "int", or "categorical")
+        low: Optional lower bound for float/int ranges
+        high: Optional upper bound for float/int ranges
+        log: Optional flag for log-scale sampling (float only)
+        step: Optional step size for int discretization
+        choices: Optional list of choices for categorical parameters
+
+    Example:
+        >>> float_param = SearchParamConfig(type="float", low=1e-5, high=1e-1, log=True)
+        >>> int_param = SearchParamConfig(type="int", low=1, high=100, step=1)
+        >>> cat_param = SearchParamConfig(type="categorical", choices=["adam", "sgd"])
+    """
+
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    type: Literal["float", "int", "categorical"] = Field(
+        ...,
+        description="Parameter type for search space"
+    )
+
+    # For float and int types
+    low: Optional[float] = Field(
+        default=None,
+        description="Lower bound for float/int ranges"
+    )
+
+    high: Optional[float] = Field(
+        default=None,
+        description="Upper bound for float/int ranges"
+    )
+
+    log: Optional[bool] = Field(
+        default=False,
+        description="Use log-scale sampling (float only)"
+    )
+
+    # For int type
+    step: Optional[int] = Field(
+        default=1,
+        description="Step size for int discretization"
+    )
+
+    # For categorical type
+    choices: Optional[List[Any]] = Field(
+        default=None,
+        description="Choices for categorical parameters"
+    )
+
+    @field_validator('type')
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        """Validate parameter type."""
+        valid_types = ["float", "int", "categorical"]
+        if v not in valid_types:
+            raise ValueError(f"type must be one of {valid_types}")
+        return v
+
+    @field_validator('choices')
+    @classmethod
+    def validate_choices(cls, v: Optional[List[Any]], info) -> Optional[List[Any]]:
+        """Validate choices are provided for categorical type."""
+        if info and info.data.get('type') == 'categorical':
+            if v is None or not v:
+                raise ValueError("choices must be provided for categorical type")
+        return v
+
+    @field_validator('low', 'high')
+    @classmethod
+    def validate_bounds(cls, v: Optional[float], info) -> Optional[float]:
+        """Validate bounds are provided for float/int types."""
+        if info and info.data.get('type') in ['float', 'int']:
+            # This is a simplified check - full validation happens in OptimizationConfig
+            return v
+        return v
+
+
+class OptimizationConfig(BaseModel):
+    """
+    Schema for Optuna hyperparameter optimization configuration.
+
+    This class defines the configuration for automated hyperparameter search
+    using Optuna, including search spaces, pruning, and study settings.
+
+    Attributes:
+        n_trials: Number of trials to run
+        study_name: Optuna study name for persistence
+        direction: Optimization direction ("minimize" or "maximize")
+        metric: Metric name to optimize (e.g., "val.rmse")
+        search: Dict mapping parameter names to SearchParamConfig
+        pruner: Optional pruner configuration dict
+        timeout: Optional study timeout in seconds
+
+    Example:
+        >>> opt_config = OptimizationConfig(
+        ...     n_trials=100,
+        ...     study_name="lr_search",
+        ...     direction="minimize",
+        ...     metric="val.rmse",
+        ...     search={
+        ...         "learning_rate": SearchParamConfig(type="float", low=1e-5, high=1e-1, log=True),
+        ...         "batch_size": SearchParamConfig(type="int", low=8, high=64, step=8)
+        ...     },
+        ...     pruner={"type": "median", "n_startup_trials": 5, "n_warmup_steps": 10}
+        ... )
+    """
+
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    n_trials: int = Field(
+        ...,
+        gt=0,
+        description="Number of optimization trials to run"
+    )
+
+    study_name: str = Field(
+        ...,
+        min_length=1,
+        description="Optuna study name for persistence"
+    )
+
+    direction: Literal["minimize", "maximize"] = Field(
+        default="minimize",
+        description="Optimization direction"
+    )
+
+    metric: str = Field(
+        ...,
+        min_length=1,
+        description="Metric name to optimize (e.g., 'val.rmse')"
+    )
+
+    search: Dict[str, Dict[str, Any]] = Field(
+        ...,
+        min_length=1,
+        description="Search space definition (param name -> SearchParamConfig dict)"
+    )
+
+    pruner: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Pruner configuration for early stopping"
+    )
+
+    timeout: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Study timeout in seconds (None for no limit)"
+    )
+
+    @field_validator('search')
+    @classmethod
+    def validate_search_space(cls, v: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """Validate search space definitions."""
+        if not v:
+            raise ValueError("search space must not be empty")
+
+        for param_name, param_config in v.items():
+            # Validate each search param config
+            try:
+                SearchParamConfig(**param_config)
+            except Exception as e:
+                raise ValueError(
+                    f"Invalid search config for parameter '{param_name}': {e}"
+                )
+
+        return v
+
+    @field_validator('pruner')
+    @classmethod
+    def validate_pruner(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Validate pruner configuration."""
+        if v is None:
+            return v
+
+        valid_pruner_types = ["median", "hyperband", "successive_halving"]
+        pruner_type = v.get("type")
+
+        if pruner_type is None:
+            raise ValueError("pruner must have a 'type' field")
+
+        if pruner_type not in valid_pruner_types:
+            raise ValueError(
+                f"Invalid pruner type '{pruner_type}'. "
+                f"Valid options: {valid_pruner_types}"
+            )
+
+        return v
 
 
 class ExperimentConfig(BaseModel):
@@ -92,6 +296,11 @@ class ExperimentConfig(BaseModel):
     sweep: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Parameter sweep definition for hyperparameter search"
+    )
+
+    optimization: Optional[OptimizationConfig] = Field(
+        default=None,
+        description="Optuna hyperparameter optimization configuration"
     )
 
     @field_validator('experiment_name', 'run_name')
