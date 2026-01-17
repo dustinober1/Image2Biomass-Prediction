@@ -78,7 +78,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 2. User can aggregate results from multiple experiments into structured format
 3. User can generate insights by clustering experiment results and identifying patterns
 
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+- [ ] 03-01-PLAN.md — Create ExperimentComparator with comparison methods, export functionality, and insights generation (Wave 1)
 
 ### Phase 4: Configuration System
 
@@ -146,7 +148,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Experiment Tracking Foundation | 4/4 | ✓ Complete | 2025-01-17 |
+| 3. Analysis & Comparison | 0/1 | Not started | - |
 | 2. Organization & Discovery | 1/1 | ✓ Complete | 2025-01-17 |
 | 3. Analysis & Comparison | 0/TBD | Not started | - |
 | 4. Configuration System | 0/TBD | Not started | - |
