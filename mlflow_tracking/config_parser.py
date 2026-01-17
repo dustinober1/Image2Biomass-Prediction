@@ -5,8 +5,13 @@ This module defines the YAML schema for experiment configurations and provides
 validation logic to ensure configs are correct before execution.
 """
 
-from typing import Dict, Any, Optional, List
+import yaml
+import json
+from pathlib import Path
+from typing import Dict, Any, Optional, List, Union
 from pydantic import BaseModel, Field, field_validator, ConfigDict
+from jinja2 import Template, TemplateError
+import itertools
 
 
 class ExperimentConfig(BaseModel):
@@ -219,3 +224,173 @@ class ExperimentConfig(BaseModel):
             return template.render(**template_params)
         except Exception as e:
             raise ValueError(f"Failed to render run_name template: {e}")
+
+
+class ConfigParser:
+    """Parse and validate experiment configuration YAML files.
+
+    Handles:
+    - YAML loading and validation against ExperimentConfig schema
+    - Jinja2 templating for variable substitution
+    - Sweep expansion for grid search
+    - Adapter validation (checking adapter exists and config is valid for it)
+    """
+
+    @staticmethod
+    def load_config(config_path: Union[str, Path]) -> ExperimentConfig:
+        """Load and validate experiment configuration from YAML file.
+
+        Args:
+            config_path: Path to YAML configuration file
+
+        Returns:
+            Validated ExperimentConfig instance
+
+        Raises:
+            FileNotFoundError: If config file doesn't exist
+            yaml.YAMLError: If YAML is malformed
+            ValueError: If config fails schema validation
+        """
+        config_path = Path(config_path)
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+
+        # Load YAML
+        with open(config_path) as f:
+            config_dict = yaml.safe_load(f)
+
+        # Validate against schema
+        try:
+            config = ExperimentConfig(**config_dict)
+        except Exception as e:
+            raise ValueError(f"Config validation failed: {e}")
+
+        return config
+
+    @staticmethod
+    def _apply_template(config_yaml: str, variables: Dict[str, Any]) -> str:
+        """Apply Jinja2 templating to YAML string.
+
+        Args:
+            config_yaml: Raw YAML string with {{variable}} placeholders
+            variables: Dict of variable names to values
+
+        Returns:
+            Rendered YAML string with variables substituted
+
+        Raises:
+            TemplateError: If template syntax is invalid
+        """
+        template = Template(config_yaml)
+        return template.render(**variables)
+
+    @staticmethod
+    def _generate_sweep_combinations(grid: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
+        """Generate all combinations for grid search.
+
+        Args:
+            grid: Dict of parameter names to value lists
+                  e.g., {'lr': [0.001, 0.01], 'bs': [8, 16]}
+
+        Returns:
+            List of dicts, one per combination
+            e.g., [{'lr': 0.001, 'bs': 8}, {'lr': 0.001, 'bs': 16}, ...]
+        """
+        keys = grid.keys()
+        values = grid.values()
+        combinations = itertools.product(*values)
+
+        return [dict(zip(keys, combo)) for combo in combinations]
+
+    @staticmethod
+    def expand_sweeps(config_path: Union[str, Path]) -> List[ExperimentConfig]:
+        """Expand parameter sweeps into multiple configurations.
+
+        For configs with a 'sweep.grid' section, generates one config per
+        combination of grid parameters. Jinja2 templates in run_name and
+        parameters are substituted with sweep values.
+
+        Args:
+            config_path: Path to YAML configuration file (may contain sweep)
+
+        Returns:
+            List of ExperimentConfig instances (one per sweep combination)
+
+        Example:
+            Given sweep.grid = {'lr': [0.001, 0.01], 'bs': [8, 16]}
+            Returns 4 configs with all (lr, bs) combinations
+        """
+        config_path = Path(config_path)
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+
+        # Load raw YAML string (before parsing)
+        with open(config_path) as f:
+            config_yaml = f.read()
+
+        # Parse YAML to check for sweep section
+        config_dict = yaml.safe_load(config_yaml)
+
+        # If no sweep, return single config
+        if 'sweep' not in config_dict or 'grid' not in config_dict['sweep']:
+            return [ConfigParser.load_config(config_path)]
+
+        # Generate sweep combinations
+        grid = config_dict['sweep']['grid']
+        combinations = ConfigParser._generate_sweep_combinations(grid)
+
+        # Remove sweep section from template (not needed in individual configs)
+        # Use jinja2 to render config for each combination
+        configs = []
+        for combo in combinations:
+            # Apply template substitution
+            rendered_yaml = ConfigParser._apply_template(config_yaml, combo)
+
+            # Parse rendered YAML
+            rendered_dict = yaml.safe_load(rendered_yaml)
+
+            # Remove sweep section from individual configs
+            if 'sweep' in rendered_dict:
+                del rendered_dict['sweep']
+
+            # Validate and create config
+            try:
+                config = ExperimentConfig(**rendered_dict)
+                configs.append(config)
+            except Exception as e:
+                raise ValueError(f"Sweep config validation failed for combo {combo}: {e}")
+
+        return configs
+
+    @staticmethod
+    def validate(config: ExperimentConfig, adapter_registry: 'AdapterRegistry') -> bool:
+        """Validate configuration against adapter requirements.
+
+        This method checks:
+        1. Adapter exists in registry
+        2. Config has all required parameters for the adapter
+        3. Parameter types are correct for the adapter
+
+        Args:
+            config: Experiment configuration to validate
+            adapter_registry: AdapterRegistry instance to check adapter existence
+
+        Returns:
+            True if valid
+
+        Raises:
+            ValueError: If adapter not registered or config invalid for adapter
+        """
+        # Check adapter exists in registry
+        if config.adapter not in adapter_registry._adapters:
+            available = list(adapter_registry._adapters.keys())
+            raise ValueError(
+                f"Unknown adapter '{config.adapter}'. "
+                f"Available adapters: {available}"
+            )
+
+        # Validate against adapter-specific requirements
+        adapter = adapter_registry.get(config.adapter)
+        adapter.validate_config(config)
+
+        return True
