@@ -48,13 +48,18 @@ class ExperimentTracker:
         if tracking_uri is None:
             tracking_uri = MLFLOW_TRACKING_URI
 
+        # Set the global MLflow tracking URI
+        mlflow.set_tracking_uri(tracking_uri)
+
         self.client: MlflowClient = MlflowClient(tracking_uri)
         self.experiment: Optional[Experiment] = self.client.get_experiment_by_name(
             experiment_name
         )
 
         if not self.experiment:
-            self.experiment = self.client.create_experiment(experiment_name)
+            # create_experiment returns experiment_id (string), need to fetch the Experiment object
+            experiment_id = self.client.create_experiment(experiment_name)
+            self.experiment = self.client.get_experiment(experiment_id)
 
         self.active_run: Optional[mlflow.active_run] = None
 
@@ -69,9 +74,12 @@ class ExperimentTracker:
         Returns:
             The unique run ID for the started run
         """
-        self.active_run = mlflow.start_run(
-            run_name=run_name, tags=tags, experiment_id=self.experiment.experiment_id
-        )
+        # Set the active experiment before starting the run
+        mlflow.set_experiment(self.experiment.name)
+
+        # Start the run (uses the currently set experiment)
+        self.active_run = mlflow.start_run(run_name=run_name, tags=tags)
+
         mlflow.set_tag("status", "running")
         mlflow.set_tag("start_time", datetime.now().isoformat())
         return self.active_run.info.run_id

@@ -1,3 +1,8 @@
 .venv/
 csiro-biomass/
 models/
+# MLflow tracking
+mlflow_tracking/mlruns.db
+mlflow_tracking/mlruns/
+mlflow.db
+*.db
