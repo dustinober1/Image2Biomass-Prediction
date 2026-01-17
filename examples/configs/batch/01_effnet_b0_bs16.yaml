@@ -1,0 +1,25 @@
+# Batch experiment 1: EfficientNet-B0 with batch_size=16, lr=0.0001
+# This config is part of a batch execution demonstration
+
+experiment_name: pytorch_batch_demo
+run_name: effnet_b0_bs16_lr0.0001
+adapter: pytorch
+description: "EfficientNet-B0 for biomass prediction - batch size 16, learning rate 0.0001"
+
+parameters:
+  model_name: "efficientnet_b0"
+  batch_size: 16
+  epochs: 30
+  learning_rate: 0.0001
+  image_size: 224
+  use_tta: true
+  pretrained: true
+  random_seed: 42
+
+tags:
+  model_type: "cnn"
+  purpose: "batch_demo"
+  features: "images"
+  batch_config: "bs16_lr0.0001"
+
+random_seed: 42

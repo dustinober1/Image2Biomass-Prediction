@@ -229,3 +229,120 @@ Currently implemented adapters:
 | `sklearn` | `train_ridge_advanced.py` | model_type, random_seed |
 
 To add more adapters, copy the pattern from `mlflow_tracking/adapters.py`.
+
+## Batch Execution
+
+Run multiple experiments in parallel with automatic resource management:
+
+### CLI Usage
+
+```bash
+# Run all configs in a directory
+exp-run-batch --dir examples/configs/batch/ --verbose
+
+# Run specific configs
+exp-run-batch --configs exp1.yaml,exp2.yaml,exp3.yaml
+
+# Limit concurrency
+exp-run-batch --dir examples/configs/batch/ --max-workers 2 --verbose
+```
+
+### Resource Management
+
+The batch execution system automatically:
+
+- Detects available GPUs and CPUs
+- Allocates resources to prevent conflicts
+- Suggests safe concurrency limits
+- Monitors progress in real-time
+
+Example output:
+
+```
+Available Resources:
+  GPUs: 1/1
+  CPUs: 6/8 (2 reserved)
+Max concurrent experiments: 2
+
+Starting: effnet_b0_bs16_lr0.0001
+Starting: ridge_alpha0.1
+Completed: ridge_alpha0.1 (val.rmse=10.2345)
+Completed: effnet_b0_bs16_lr0.0001 (val.rmse=8.7654)
+  Running 0/4 experiments (2 completed, 0 failed, 2 pending)
+
+Batch complete: 4/4 succeeded, 0 failed
+
+Best result:
+  Run: effnet_b0_bs16_lr0.0001
+  val.rmse: 8.7654
+```
+
+### Programmatic Usage
+
+```python
+from mlflow_tracking import BatchExecutor
+
+executor = BatchExecutor()
+
+# Load configs from directory
+configs = executor.load_configs_from_dir("examples/configs/batch/")
+
+# Execute in parallel
+results = executor.execute_batch(
+    configs,
+    max_workers=4,  # Limit to 4 concurrent experiments
+    verbose=True
+)
+
+# Analyze results
+for result in results:
+    print(f"{result.config.run_name}: {result.status}")
+    if result.status == "completed":
+        print(f"  val.rmse: {result.metrics.get('val.rmse')}")
+```
+
+### Exit Codes
+
+- `0`: All experiments completed successfully
+- `1`: Some experiments failed (partial failure)
+- `2`: Batch execution error (no configs, invalid input, etc.)
+
+### Troubleshooting
+
+**Out of Memory (OOM) Errors:**
+
+Reduce `--max-workers` or decrease `batch_size` in configs:
+
+```bash
+exp-run-batch --dir batch/ --max-workers 1
+```
+
+**GPU Resource Conflicts:**
+
+The ResourceManager prevents multiple experiments from using the same GPU.
+If you have multiple GPUs, experiments will be distributed automatically.
+
+**CPU Oversubscription:**
+
+The system reserves 2 CPU cores for system processes by default.
+Adjust via ResourceManager if needed:
+
+```python
+from mlflow_tracking import ResourceManager
+
+rm = ResourceManager(reserve_cores=4)  # Reserve 4 cores instead of 2
+executor = BatchExecutor(resource_manager=rm)
+```
+
+### Batch Configurations
+
+Example batch configurations are in `examples/configs/batch/`:
+
+- `01_effnet_b0_bs16.yaml` - EfficientNet-B0, batch_size=16
+- `02_effnet_b0_bs32.yaml` - EfficientNet-B0, batch_size=32
+- `03_ridge_alpha0.1.yaml` - Ridge regression, alpha=0.1
+- `04_ridge_alpha1.0.yaml` - Ridge regression, alpha=1.0
+
+These configs demonstrate running multiple experiments with different
+hyperparameters in parallel, dramatically reducing wall-clock time.
+

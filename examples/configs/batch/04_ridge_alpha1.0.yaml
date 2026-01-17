@@ -1,0 +1,21 @@
+# Batch experiment 4: Ridge regression with alpha=1.0
+# This config is part of a batch execution demonstration
+
+experiment_name: sklearn_batch_demo
+run_name: ridge_alpha1.0
+adapter: sklearn
+description: "Ridge regression on tabular metadata - alpha=1.0"
+
+parameters:
+  model_type: "ridge"
+  alpha: 1.0
+  fit_intercept: true
+  random_seed: 42
+
+tags:
+  model_type: "linear"
+  purpose: "batch_demo"
+  features: "tabular"
+  batch_config: "alpha1.0"
+
+random_seed: 42
