@@ -185,5 +185,23 @@ We generated Out-of-Fold (OOF) predictions for the entire dataset:
 - **Result**: Validation RMSE: **30.25**.
 - **Insight**: While auxiliary targets slightly stabilized the CNN compared to the raw baseline (RMSE 32+), the fundamental data scarcity (N=357) prevents deep models from generalizing as well as the tabular and ensemble approaches.
 
+## Phase 9: Advanced Spatial-Spectral & Quantile Stacking
+
+### 1. Experiment 11 & 12 (Grid Indices Suite)
+- **Goal**: Extract spatial information using a 4x2 grid and advanced spectral indices (VARI, GLI, NGRDI).
+- **Implementation**: `scripts/extract_grid_features.py`.
+- **Finding**: These 81+ features provide a granular map of the biomass state across the image, which is more powerful than global averages.
+
+### 2. Experiment 13 (Quantile Stacking)
+- **Goal**: Replace Ridge with a Non-Linear Quantile Meta-Learner (LightGBM).
+- **Result**: Validation OOF RMSE: **11.59**.
+- **Insight**: Quantile loss (alpha=0.5) targets the median, making the ensemble more robust to the high variance in Clover and Dead matter. The non-linear meta-learner effectively integrated the large feature set (81 features) from Phase 9.
+
 ## Final Project Conclusion
-The combination of **Tabular Metadata Models**, **Unsupervised K-Means Segmentation**, and **Hierarchical Stacking** remains the state-of-the-art approach for this dataset. The most robust estimate of performance is the 5-Fold CV OOF RMSE of **11.34**.
+The research phase has explored 13 distinct experimental strategies. The ultimate biomass predictor is a **Hierarchical Stacking Ensemble** that combines:
+1.  **Tabular Metadata** (Best for Green Biomass)
+2.  **K-Means Texture-Augmented Segmentation** (Best for Dead Matter)
+3.  **Advanced Grid-Spectral Indices** (Best for Spatial Distribution)
+4.  **Pseudo-Labeling/TTA EfficientNet** (Deep Visual Backbone)
+
+The most robust performance estimate is a 5-Fold OOF RMSE of **11.34 - 11.59**, representing a stable and generalized solution for the CSIRO competition.

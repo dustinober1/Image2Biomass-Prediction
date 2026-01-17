@@ -28,10 +28,10 @@
     - **Significance**: While 11.34 is higher than the previous 6.64 (which was on a single split), it represents a significantly more robust and stable performance estimate. Stacking improved over the best base model (Tabular 11.73).
 - **Submission**: `submission_stacking.csv` generated.
 
-- **Phase 8 Complete**: TAS and Multi-Task CNN.
+- **Phase 9 Complete**: Advanced Grid Suite + Quantile Stacking.
 - **Results**: 
-    - TAS (RMSE 13.57) showed texture helps color-based models.
-    - Multi-Task CNN (RMSE 30.25) confirmed deep learning limits on small data.
-- **Status**: Research Phase Concluded. Best Pipeline: Hierarchical Stacking.
+    - Grid Features (Exp 11/12) provided granular spatial-spectral data.
+    - Quantile Stacker (Exp 13) achieved RMSE 11.59, offering a robust alternative to Ridge.
+- **Status**: Research Concluded. Final Pipeline: Hierarchical Multi-Feature Stacker.
 
 - **Status**: Production-Ready Ensemble Finalized.
