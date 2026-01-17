@@ -1,0 +1,2 @@
+# This directory stores MLflow experiment data
+# MLflow will create the actual mlruns.db SQLite database here
