@@ -34,9 +34,9 @@
     - [x] Schedulers (CosineAnnealing).
 
 ## Phase 4: Refinement & Submission
-- [ ] **Evaluation**
-    - [ ] Compare validation metrics across experiments.
-    - [ ] Error analysis (where does it fail?).
-- [ ] **Inference**
-    - [ ] Script to generate `sample_submission.csv`.
-    - [ ] Final submission generation.
+- [x] **Evaluation**
+    - [x] Compare validation metrics across experiments.
+    - [x] Error analysis (where does it fail?).
+- [x] **Inference**
+    - [x] Script to generate `sample_submission.csv`.
+    - [x] Final submission generation.
