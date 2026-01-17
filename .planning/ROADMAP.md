@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Organization & Discovery** - Grouping, tagging, and searching experiments (completed 2025-01-17)
 - [x] **Phase 3: Analysis & Comparison** - Metrics comparison and results aggregation (completed 2026-01-17)
 - [x] **Phase 4: Configuration System** - YAML-driven experiment definitions (completed 2026-01-17)
-- [ ] **Phase 5: Script Adapters & Auto-Logging** - Integration with existing 29 training scripts
+- [x] **Phase 5: Script Adapters & Auto-Logging** - Integration with existing 29 training scripts (completed 2026-01-17)
 - [ ] **Phase 6: Parallel Execution Infrastructure** - Batch execution and resource management
 - [ ] **Phase 7: Hyperparameter Optimization** - Optuna integration with pruning
 
@@ -117,7 +117,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Plans**: 1 plan in 1 wave
 
-- [ ] 05-01-PLAN.md — Create AutoLogger and SeedManager with adapter integration (Wave 1)
+- [x] 05-01-PLAN.md — Create AutoLogger and SeedManager with adapter integration (Wave 1) ✓ Complete
 
 ### Phase 6: Parallel Execution Infrastructure
 
@@ -155,7 +155,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Configuration System | 4/4 | ✓ Complete | 2026-01-17 |
-| 5. Script Adapters & Auto-Logging | 0/1 | Not started | - |
+| 5. Script Adapters & Auto-Logging | 1/1 | ✓ Complete | 2026-01-17 |
 | 6. Parallel Execution Infrastructure | 0/TBD | Not started | - |
 | 7. Hyperparameter Optimization | 0/TBD | Not started | - |

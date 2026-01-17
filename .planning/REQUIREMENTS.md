@@ -116,10 +116,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONFIG-02 | Phase 4 | Complete |
 | CONFIG-03 | Phase 4 | Complete |
 | INTEGRATION-01 | Phase 4 | Complete |
-| INTEGRATION-02 | Phase 5 | Pending |
+| INTEGRATION-02 | Phase 5 | Complete |
 | INFRA-01 | Phase 6 | Pending |
 | INFRA-02 | Phase 6 | Pending |
-| INFRA-03 | Phase 5 | Pending |
+| INFRA-03 | Phase 5 | Complete |
 | REPRO-01 | Phase 1 | Complete |
 | REPRO-02 | Phase 1 | Complete |
 | REPRO-03 | Phase 1 | Complete |
