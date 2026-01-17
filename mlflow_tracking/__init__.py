@@ -14,6 +14,8 @@ from .environment import get_environment, get_git_hash, get_package_versions
 from .organizer import ExperimentOrganizer, create_group
 from .comparison import ExperimentComparator
 from .config_parser import ExperimentConfig, ConfigParser
+from .autolog import AutoLogger
+from .seed_manager import SeedManager
 from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
 from .cli import main, exp_run_command
 
@@ -29,6 +31,8 @@ __all__ = [
     "ExperimentComparator",
     "ExperimentConfig",
     "ConfigParser",
+    "AutoLogger",
+    "SeedManager",
     "BaseAdapter",
     "AdapterRegistry",
     "PyTorchAdapter",

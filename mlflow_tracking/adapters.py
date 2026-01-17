@@ -4,14 +4,21 @@ Abstract adapter interface for wrapping training scripts.
 This module provides the BaseAdapter protocol and AdapterRegistry for
 registering and retrieving training script adapters, enabling existing
 scripts to run via YAML config without modification.
+
+Auto-logging support:
+- Adapters integrate with AutoLogger for automatic metric logging (INTEGRATION-02)
+- Adapters integrate with SeedManager for reproducible random seeds (REPRO-03)
+- Framework detection enables automatic adapter selection
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Dict, Type, Optional
 import subprocess
 import json
 
 from mlflow_tracking.config_parser import ExperimentConfig
+from mlflow_tracking.autolog import AutoLogger
+from mlflow_tracking.seed_manager import SeedManager
 
 
 class BaseAdapter(ABC):
@@ -269,6 +276,7 @@ class PyTorchAdapter(BaseAdapter):
             image_size: int (default 224)
             use_tta: bool (default false)
             pretrained: bool (default true)
+            random_seed: int (for reproducibility, validated if present)
         """
         required = ['model_name', 'batch_size', 'epochs', 'learning_rate']
 
@@ -287,10 +295,17 @@ class PyTorchAdapter(BaseAdapter):
         if not isinstance(config.parameters['learning_rate'], (int, float)):
             raise ValueError("learning_rate must be a number")
 
+        # Validate random_seed if present (optional parameter)
+        if 'random_seed' in config.parameters:
+            SeedManager.validate_seed(config.parameters['random_seed'])
+
         return True
 
     def execute(self, config: ExperimentConfig, tracker) -> Dict[str, float]:
         """Execute PyTorch training script.
+
+        This method integrates AutoLogger and SeedManager for automatic
+        metric logging and reproducible random seeds.
 
         Args:
             config: Experiment configuration with script parameters
@@ -298,68 +313,102 @@ class PyTorchAdapter(BaseAdapter):
 
         Returns:
             Dictionary of final metrics (e.g., {'train.rmse': 8.2, 'val.rmse': 10.5})
-            Note: Metrics are logged to MLflow by CLI, not by adapter directly.
+            Note: With auto-logging enabled, MLflow automatically captures metrics.
+            This method returns an empty dict since metrics are logged by MLflow.
 
         Raises:
             subprocess.CalledProcessError: If script fails
-            ValueError: If script doesn't output JSON metrics
+            ValueError: If script doesn't output JSON metrics or framework detection fails
         """
-        # Map config parameters to command-line arguments
         script_path = "scripts/train_oof_effnet.py"
 
-        # Build command args from config parameters
-        args = ["python3", script_path]
-
-        # Convert parameters to CLI args
-        param_mapping = {
-            'model_name': '--model_name',
-            'batch_size': '--batch_size',
-            'epochs': '--epochs',
-            'learning_rate': '--learning_rate',
-            'image_size': '--image_size',
-            'use_tta': '--use_tta',
-            'pretrained': '--pretrained',
-        }
-
-        for param_name, arg_name in param_mapping.items():
-            if param_name in config.parameters:
-                value = config.parameters[param_name]
-                args.append(arg_name)
-                args.append(str(value))
-
-        # Execute script
-        print(f"Executing: {' '.join(args)}")
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        # Parse JSON output from script
-        # Assume script prints metrics as JSON: {"train_rmse": 8.2, "val_rmse": 10.5}
-        try:
-            # Last non-empty line should be JSON
-            output_lines = [line for line in result.stdout.split('\n') if line.strip()]
-            json_output = output_lines[-1] if output_lines else "{}"
-            metrics_dict = json.loads(json_output)
-
-            # Convert to MLflow format (use dots for hierarchy)
-            metrics = {}
-            for key, value in metrics_dict.items():
-                # Convert train_rmse -> train.rmse
-                mlflow_key = key.replace('_', '.')
-                metrics[mlflow_key] = float(value)
-
-            return metrics
-
-        except (json.JSONDecodeError, IndexError, ValueError) as e:
+        # Detect framework from script imports
+        framework = AutoLogger.detect_framework(script_path)
+        if framework == 'unknown':
             raise ValueError(
-                f"Script output parsing failed. "
-                f"Expected JSON metrics on last line of stdout.\n"
-                f"Error: {e}\n"
-                f"Output: {result.stdout}"
+                f"Cannot detect ML framework for script: {script_path}. "
+                f"Script must import torch, sklearn, or xgboost."
             )
+
+        # Execute with SeedManager if random_seed provided
+        if 'random_seed' in config.parameters:
+            seed = SeedManager.validate_seed(config.parameters['random_seed'])
+            with SeedManager(seed):
+                return self._execute_with_autolog(config, framework, script_path)
+        else:
+            return self._execute_with_autolog(config, framework, script_path)
+
+    def _execute_with_autolog(
+        self,
+        config: ExperimentConfig,
+        framework: str,
+        script_path: str
+    ) -> Dict[str, float]:
+        """Execute script with AutoLogger context for automatic metric logging.
+
+        Args:
+            config: Experiment configuration with script parameters
+            framework: Detected ML framework ('pytorch', 'sklearn', 'xgboost')
+            script_path: Path to training script
+
+        Returns:
+            Empty dict (metrics logged automatically by MLflow autolog)
+        """
+        # Enable auto-logging for the detected framework
+        with AutoLogger(framework):
+            # Build command args from config parameters
+            args = ["python3", script_path]
+
+            # Convert parameters to CLI args
+            param_mapping = {
+                'model_name': '--model_name',
+                'batch_size': '--batch_size',
+                'epochs': '--epochs',
+                'learning_rate': '--learning_rate',
+                'image_size': '--image_size',
+                'use_tta': '--use_tta',
+                'pretrained': '--pretrained',
+                'random_seed': '--random_seed',
+            }
+
+            for param_name, arg_name in param_mapping.items():
+                if param_name in config.parameters:
+                    value = config.parameters[param_name]
+                    args.append(arg_name)
+                    args.append(str(value))
+
+            # Execute script
+            print(f"Executing: {' '.join(args)}")
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            # With autolog enabled, MLflow automatically logs metrics during training
+            # We still parse JSON output for backward compatibility and validation
+            try:
+                # Last non-empty line should be JSON
+                output_lines = [line for line in result.stdout.split('\n') if line.strip()]
+                json_output = output_lines[-1] if output_lines else "{}"
+                metrics_dict = json.loads(json_output)
+
+                # Convert to MLflow format (use dots for hierarchy)
+                metrics = {}
+                for key, value in metrics_dict.items():
+                    # Convert train_rmse -> train.rmse
+                    mlflow_key = key.replace('_', '.')
+                    metrics[mlflow_key] = float(value)
+
+                return metrics
+
+            except (json.JSONDecodeError, IndexError, ValueError) as e:
+                # If script doesn't output JSON, metrics may still be logged via autolog
+                # Return empty dict and let MLflow's autolog handle it
+                print(f"Warning: Could not parse JSON output from script: {e}")
+                print("Metrics may still be logged via MLflow autolog.")
+                return {}
 
 
 @AdapterRegistry.register('sklearn')
@@ -390,7 +439,7 @@ class SklearnAdapter(BaseAdapter):
 
         Required parameters:
             model_type: str (e.g., 'ridge', 'lasso', 'xgboost')
-            random_seed: int
+            random_seed: int (for reproducibility)
 
         Optional parameters (model-dependent):
             alpha: float (for Ridge, Lasso)
@@ -415,10 +464,16 @@ class SklearnAdapter(BaseAdapter):
                 f"Valid options: {valid_models}"
             )
 
+        # Validate random_seed (required for sklearn)
+        SeedManager.validate_seed(config.parameters['random_seed'])
+
         return True
 
     def execute(self, config: ExperimentConfig, tracker) -> Dict[str, float]:
         """Execute sklearn training script.
+
+        This method integrates AutoLogger and SeedManager for automatic
+        metric logging and reproducible random seeds.
 
         Args:
             config: Experiment configuration with script parameters
@@ -426,53 +481,87 @@ class SklearnAdapter(BaseAdapter):
 
         Returns:
             Dictionary of final metrics (e.g., {'train.rmse': 8.2, 'val.rmse': 10.5})
-            Note: Metrics are logged to MLflow by CLI, not by adapter directly.
+            Note: With auto-logging enabled, MLflow automatically captures metrics.
+            This method returns an empty dict since metrics are logged by MLflow.
 
         Raises:
             subprocess.CalledProcessError: If script fails
-            ValueError: If script doesn't output JSON metrics
+            ValueError: If script doesn't output JSON metrics or framework detection fails
         """
-        # Map config parameters to command-line arguments
         script_path = "scripts/train_ridge_advanced.py"
 
-        # Build command args from config parameters
-        args = ["python3", script_path]
-
-        # Convert all parameters to CLI args
-        for param_name, value in config.parameters.items():
-            arg_name = f"--{param_name}"
-            args.append(arg_name)
-            args.append(str(value))
-
-        # Execute script
-        print(f"Executing: {' '.join(args)}")
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        # Parse JSON output from script
-        try:
-            # Last non-empty line should be JSON
-            output_lines = [line for line in result.stdout.split('\n') if line.strip()]
-            json_output = output_lines[-1] if output_lines else "{}"
-            metrics_dict = json.loads(json_output)
-
-            # Convert to MLflow format (use dots for hierarchy)
-            metrics = {}
-            for key, value in metrics_dict.items():
-                # Convert train_rmse -> train.rmse
-                mlflow_key = key.replace('_', '.')
-                metrics[mlflow_key] = float(value)
-
-            return metrics
-
-        except (json.JSONDecodeError, IndexError, ValueError) as e:
+        # Detect framework from script imports
+        framework = AutoLogger.detect_framework(script_path)
+        if framework == 'unknown':
             raise ValueError(
-                f"Script output parsing failed. "
-                f"Expected JSON metrics on last line of stdout.\n"
-                f"Error: {e}\n"
-                f"Output: {result.stdout}"
+                f"Cannot detect ML framework for script: {script_path}. "
+                f"Script must import torch, sklearn, or xgboost."
             )
+
+        # Execute with SeedManager if random_seed provided
+        if 'random_seed' in config.parameters:
+            seed = SeedManager.validate_seed(config.parameters['random_seed'])
+            with SeedManager(seed):
+                return self._execute_with_autolog(config, framework, script_path)
+        else:
+            return self._execute_with_autolog(config, framework, script_path)
+
+    def _execute_with_autolog(
+        self,
+        config: ExperimentConfig,
+        framework: str,
+        script_path: str
+    ) -> Dict[str, float]:
+        """Execute script with AutoLogger context for automatic metric logging.
+
+        Args:
+            config: Experiment configuration with script parameters
+            framework: Detected ML framework ('pytorch', 'sklearn', 'xgboost')
+            script_path: Path to training script
+
+        Returns:
+            Empty dict (metrics logged automatically by MLflow autolog)
+        """
+        # Enable auto-logging for the detected framework
+        with AutoLogger(framework):
+            # Build command args from config parameters
+            args = ["python3", script_path]
+
+            # Convert all parameters to CLI args
+            for param_name, value in config.parameters.items():
+                arg_name = f"--{param_name}"
+                args.append(arg_name)
+                args.append(str(value))
+
+            # Execute script
+            print(f"Executing: {' '.join(args)}")
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            # With autolog enabled, MLflow automatically logs metrics during training
+            # We still parse JSON output for backward compatibility and validation
+            try:
+                # Last non-empty line should be JSON
+                output_lines = [line for line in result.stdout.split('\n') if line.strip()]
+                json_output = output_lines[-1] if output_lines else "{}"
+                metrics_dict = json.loads(json_output)
+
+                # Convert to MLflow format (use dots for hierarchy)
+                metrics = {}
+                for key, value in metrics_dict.items():
+                    # Convert train_rmse -> train.rmse
+                    mlflow_key = key.replace('_', '.')
+                    metrics[mlflow_key] = float(value)
+
+                return metrics
+
+            except (json.JSONDecodeError, IndexError, ValueError) as e:
+                # If script doesn't output JSON, metrics may still be logged via autolog
+                # Return empty dict and let MLflow's autolog handle it
+                print(f"Warning: Could not parse JSON output from script: {e}")
+                print("Metrics may still be logged via MLflow autolog.")
+                return {}
