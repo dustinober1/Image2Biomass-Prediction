@@ -13,6 +13,8 @@ from .data_split import DataSplitter, create_canonical_splits
 from .environment import get_environment, get_git_hash, get_package_versions
 from .organizer import ExperimentOrganizer, create_group
 from .comparison import ExperimentComparator
+from .config_parser import ExperimentConfig
+from .adapters import BaseAdapter, AdapterRegistry
 
 __all__ = [
     "ExperimentTracker",
@@ -23,5 +25,8 @@ __all__ = [
     "get_package_versions",
     "ExperimentOrganizer",
     "create_group",
-    "ExperimentComparator"
+    "ExperimentComparator",
+    "ExperimentConfig",
+    "BaseAdapter",
+    "AdapterRegistry"
 ]
