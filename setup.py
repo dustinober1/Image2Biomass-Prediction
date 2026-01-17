@@ -26,6 +26,7 @@ setup(
     entry_points={
         "console_scripts": [
             "exp-run=mlflow_tracking.cli:main",
+            "exp-run-batch=mlflow_tracking.cli:main_batch",
         ],
     },
     python_requires=">=3.8",

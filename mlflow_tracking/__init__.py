@@ -17,7 +17,9 @@ from .config_parser import ExperimentConfig, ConfigParser
 from .autolog import AutoLogger
 from .seed_manager import SeedManager
 from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
-from .cli import main, exp_run_command
+from .cli import main, exp_run_command, main_batch, exp_run_batch_command
+from .resource_manager import ResourceManager
+from .batch_executor import BatchExecutor, ExperimentResult, BatchProgress
 
 __all__ = [
     "ExperimentTracker",
@@ -38,5 +40,11 @@ __all__ = [
     "PyTorchAdapter",
     "SklearnAdapter",
     "main",
-    "exp_run_command"
+    "exp_run_command",
+    "main_batch",
+    "exp_run_batch_command",
+    "ResourceManager",
+    "BatchExecutor",
+    "ExperimentResult",
+    "BatchProgress",
 ]
