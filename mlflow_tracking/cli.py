@@ -6,10 +6,13 @@ validates them against registered adapters, and executes experiments using
 MLflow for logging.
 
 Also provides `exp-run-batch` command for parallel batch execution.
+
+Also provides `exp-run-optimize` command for hyperparameter optimization.
 """
 
 import sys
 import argparse
+import yaml
 from pathlib import Path
 from typing import Optional, List
 
@@ -18,7 +21,9 @@ from mlflow_tracking import (
     ExperimentTracker,
     AdapterRegistry,
     BatchExecutor,
-    ResourceManager
+    ResourceManager,
+    OptunaOptimizer,
+    ExperimentConfig,
 )
 
 
@@ -314,6 +319,188 @@ For more information, see: examples/configs/README.md
         configs=args.configs,
         max_workers=args.max_workers,
         verbose=args.verbose
+    )
+
+
+def exp_run_optimize_command(
+    config_path: str,
+    n_trials: Optional[int] = None,
+    n_jobs: int = 1,
+    verbose: bool = False,
+) -> int:
+    """Execute hyperparameter optimization from YAML configuration.
+
+    Args:
+        config_path: Path to YAML configuration file with optimization section
+        n_trials: Override number of trials (uses config value if None)
+        n_jobs: Number of parallel trials (-1 for auto-detect)
+        verbose: Print detailed optimization progress
+
+    Returns:
+        0 on success, 1 on optimization error, 2 on config error
+    """
+    try:
+        # Load config
+        if verbose:
+            print(f"Loading optimization config from {config_path}...")
+
+        config = ConfigParser.load_config(config_path)
+
+        # Check for optimization section
+        if config.optimization is None:
+            print(
+                f"Error: Config file must have 'optimization' section. "
+                f"See examples/configs/optimization/ for examples.",
+                file=sys.stderr
+            )
+            return 2
+
+        # Override n_trials if specified
+        if n_trials is not None:
+            config.optimization.n_trials = n_trials
+            if verbose:
+                print(f"Override: n_trials = {n_trials}")
+
+        # Validate config against adapter requirements
+        if verbose:
+            print(f"Validating config for adapter '{config.adapter}'...")
+        ConfigParser.validate(config, AdapterRegistry)
+
+        # Create experiment tracker
+        tracker = ExperimentTracker(
+            config.experiment_name,
+            auto_log_environment=True
+        )
+
+        # Create optimizer
+        optimizer = OptunaOptimizer(
+            optimization_config=config.optimization,
+            base_config=config,
+            tracker=tracker,
+        )
+
+        # Handle n_jobs=-1 for auto-detect
+        if n_jobs == -1:
+            from mlflow_tracking.resource_manager import ResourceManager
+            resource_manager = ResourceManager()
+            n_jobs = resource_manager.get_resource_summary()['suggested_concurrent']
+            if verbose:
+                print(f"Auto-detected parallel jobs: {n_jobs}")
+
+        # Run optimization study
+        if verbose:
+            print(f"\nStarting optimization study...")
+            print(f"  Study name: {config.optimization.study_name}")
+            print(f"  Trials: {config.optimization.n_trials}")
+            print(f"  Direction: {config.optimization.direction}")
+            print(f"  Metric: {config.optimization.metric}")
+            print(f"  Search space: {list(config.optimization.search.keys())}")
+            print(f"  Parallel jobs: {n_jobs}")
+            print()
+
+        study = optimizer.run_study(n_jobs=n_jobs, show_progress=verbose)
+
+        # Print results
+        print(f"\n{'='*60}")
+        print(f"Optimization complete!")
+        print(f"{'='*60}")
+        print(f"Best value: {study.best_value}")
+        print(f"Best params:")
+        for param, value in study.best_params.items():
+            print(f"  {param}: {value}")
+        print()
+
+        # Save best config
+        best_config = optimizer.generate_best_config()
+        best_config_path = Path(config_path).parent / f"{Path(config_path).stem}_best.yaml"
+
+        # Convert config to dict for YAML export
+        best_config_dict = best_config.model_dump()
+
+        # Add optimization metadata
+        best_config_dict['tags']['optimized_from'] = config.optimization.study_name
+        best_config_dict['tags']['best_value'] = str(study.best_value)
+
+        with open(best_config_path, 'w') as f:
+            yaml.dump(best_config_dict, f, default_flow_style=False, sort_keys=False)
+
+        print(f"Best config saved to: {best_config_path}")
+        print(f"\nTo run with best hyperparameters:")
+        print(f"  exp-run {best_config_path}")
+
+        return 0
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except ValueError as e:
+        print(f"Validation error: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:
+        print(f"Optimization error: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
+def main_optimize(argv: Optional[list] = None) -> int:
+    """CLI entry point for exp-run-optimize command.
+
+    Usage:
+        exp-run-optimize config.yaml                      # Run optimization
+        exp-run-optimize config.yaml --n-trials 50        # Override trial count
+        exp-run-optimize config.yaml --n-jobs 4           # Parallel trials
+        exp-run-optimize config.yaml --verbose            # Detailed output
+    """
+    parser = argparse.ArgumentParser(
+        description="Run hyperparameter optimization from YAML configuration files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  exp-run-optimize config.yaml                  Run optimization study
+  exp-run-optimize config.yaml --n-trials 50    Override trial count
+  exp-run-optimize config.yaml --n-jobs 4       Run 4 parallel trials
+  exp-run-optimize config.yaml -v               Verbose output
+  exp-run-optimize config.yaml --n-jobs -1      Auto-detect parallel jobs
+
+For more information, see: examples/configs/optimization/README.md
+        """
+    )
+
+    parser.add_argument(
+        "config",
+        help="Path to YAML configuration file with optimization section"
+    )
+
+    parser.add_argument(
+        "-n", "--n-trials",
+        type=int,
+        default=None,
+        help="Override number of optimization trials"
+    )
+
+    parser.add_argument(
+        "-j", "--n-jobs",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Number of parallel trials (-1 for auto-detect, default: 1)"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Print detailed optimization progress"
+    )
+
+    args = parser.parse_args(argv)
+
+    return exp_run_optimize_command(
+        config_path=args.config,
+        n_trials=args.n_trials,
+        n_jobs=args.n_jobs,
+        verbose=args.verbose,
     )
 
 

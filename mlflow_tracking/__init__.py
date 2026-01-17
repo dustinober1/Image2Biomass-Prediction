@@ -17,7 +17,7 @@ from .config_parser import ExperimentConfig, ConfigParser, OptimizationConfig, S
 from .autolog import AutoLogger
 from .seed_manager import SeedManager
 from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
-from .cli import main, exp_run_command, main_batch, exp_run_batch_command
+from .cli import main, exp_run_command, main_batch, exp_run_batch_command, main_optimize, exp_run_optimize_command
 from .resource_manager import ResourceManager
 from .batch_executor import BatchExecutor, ExperimentResult, BatchProgress
 from .optuna_optimizer import OptunaOptimizer, create_optimization_config, suggest_params_from_trial
@@ -46,6 +46,8 @@ __all__ = [
     "exp_run_command",
     "main_batch",
     "exp_run_batch_command",
+    "main_optimize",
+    "exp_run_optimize_command",
     "ResourceManager",
     "BatchExecutor",
     "ExperimentResult",
