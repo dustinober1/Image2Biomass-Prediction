@@ -111,6 +111,9 @@ tags:
 
 - **basic_experiment.yaml** - Simple single experiment configuration
 - **sweep_experiment.yaml** - Hyperparameter sweep with grid search
+- **adapter_examples/pytorch_effnet.yaml** - PyTorch EfficientNet with parameter sweep
+- **adapter_examples/sklearn_ridge.yaml** - Scikit-learn Ridge regression with alpha sweep
+- **adapter_examples/xgboost_advanced.yaml** - XGBoost with tree hyperparameter sweep
 
 ## Usage
 
@@ -134,3 +137,95 @@ config = ExperimentConfig(**config_dict)
 3. **Reproducibility**: Always set random_seed explicitly
 4. **Documentation**: Add description field for context
 5. **Version control**: Commit configs alongside code changes
+
+## Creating Adapters for Additional Scripts
+
+The project has 29 training scripts. Two adapters (PyTorch, Sklearn) demonstrate the pattern.
+To wrap the remaining 27 scripts, follow this 3-step pattern:
+
+**Step 1: Create adapter class**
+
+```python
+from mlflow_tracking.adapters import BaseAdapter, AdapterRegistry
+from mlflow_tracking import ExperimentConfig
+import subprocess
+import json
+from typing import Dict
+
+@AdapterRegistry.register('pytorch_resnet')
+class ResNetAdapter(BaseAdapter):
+    def validate_config(self, config: ExperimentConfig) -> bool:
+        # Define required parameters for this script
+        required = ['model_name', 'batch_size', 'epochs']
+        for param in required:
+            if param not in config.parameters:
+                raise ValueError(f"Missing required parameter: {param}")
+        return True
+
+    def execute(self, config: ExperimentConfig, tracker) -> Dict[str, float]:
+        script_path = "scripts/train_resnet.py"  # Update script path
+        args = ["python3", script_path]
+
+        # Build CLI args from config.parameters
+        for param_name, value in config.parameters.items():
+            args.extend([f"--{param_name}", str(value)])
+
+        result = subprocess.run(args, capture_output=True, text=True, check=True)
+        metrics_dict = json.loads(result.stdout.split('\n')[-1])  # Parse JSON output
+
+        # Convert to MLflow format
+        return {k.replace('_', '.'): float(v) for k, v in metrics_dict.items()}
+```
+
+**Step 2: Create YAML config**
+
+```yaml
+experiment_name: resnet_experiments
+run_name: resnet_b0
+adapter: pytorch_resnet  # Use new adapter name
+parameters:
+  model_name: "resnet18"
+  batch_size: 32
+  epochs: 30
+```
+
+**Step 3: Run experiment**
+
+```bash
+exp-run configs/resnet_config.yaml
+```
+
+That's the entire pattern. Same 3 steps for all remaining scripts.
+
+### Adapter Implementation Notes
+
+**Required methods:**
+- `validate_config(config)`: Check required parameters exist
+- `execute(config, tracker)`: Run script and return metrics dict
+
+**Script output format:**
+Scripts must print JSON as the last line of stdout:
+```python
+print(json.dumps({"train_rmse": 8.2, "val_rmse": 10.5}))
+```
+
+**Metric naming:**
+Adapters convert underscore keys to dot notation for MLflow:
+- `train_rmse` -> `train.rmse`
+- `val_r2` -> `val.r2`
+
+**Error handling:**
+- Raise `ValueError` for validation failures
+- Let `subprocess.CalledProcessError` propagate for script failures
+- Adapter returns metrics; CLI logs them to MLflow
+
+### Available Adapters
+
+Currently implemented adapters:
+
+| Adapter | Script | Required Parameters |
+|---------|--------|---------------------|
+| `pytorch` | `train_oof_effnet.py` | model_name, batch_size, epochs, learning_rate |
+| `sklearn` | `train_ridge_advanced.py` | model_type, random_seed |
+
+To add more adapters, copy the pattern from `mlflow_tracking/adapters.py`.

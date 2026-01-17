@@ -1,0 +1,25 @@
+experiment_name: pytorch_baselines
+run_name: effnet_b0_bs{{batch_size}}_lr{{learning_rate}}
+adapter: pytorch
+description: "EfficientNet-B0 for biomass prediction with image features"
+
+parameters:
+  model_name: "efficientnet_b0"
+  batch_size: 16
+  epochs: 30
+  learning_rate: 0.0001
+  image_size: 224
+  use_tta: true
+  pretrained: true
+
+sweep:
+  grid:
+    batch_size: [8, 16, 32]
+    learning_rate: [0.0001, 0.0005, 0.001]
+
+tags:
+  model_type: "cnn"
+  purpose: "baseline"
+  features: "images"
+
+random_seed: 42

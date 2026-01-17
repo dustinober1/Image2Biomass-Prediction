@@ -1,0 +1,21 @@
+experiment_name: sklearn_baselines
+run_name: ridge_alpha{{alpha}}
+adapter: sklearn
+description: "Ridge regression on tabular metadata (Height, NDVI)"
+
+parameters:
+  model_type: "ridge"
+  alpha: 1.0
+  fit_intercept: true
+  random_seed: 42
+
+sweep:
+  grid:
+    alpha: [0.1, 1.0, 10.0]
+
+tags:
+  model_type: "linear"
+  purpose: "baseline"
+  features: "tabular"
+
+random_seed: 42

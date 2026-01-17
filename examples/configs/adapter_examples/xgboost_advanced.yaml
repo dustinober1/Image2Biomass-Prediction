@@ -1,0 +1,23 @@
+experiment_name: xgboost_experiments
+run_name: xgb_est{{n_estimators}}_depth{{max_depth}}
+adapter: sklearn
+description: "XGBoost with tree-based hyperparameters"
+
+parameters:
+  model_type: "xgboost"
+  n_estimators: 100
+  max_depth: 6
+  learning_rate: 0.1
+  random_seed: 42
+
+sweep:
+  grid:
+    n_estimators: [50, 100, 200]
+    max_depth: [3, 6, 9]
+
+tags:
+  model_type: "gradient_boosting"
+  purpose: "nonlinear"
+  features: "tabular"
+
+random_seed: 42
