@@ -234,6 +234,35 @@ class ExperimentTracker:
             raise RuntimeError("No active run. Call start_run() first.")
         return self.active_run.info.run_id
 
+    def mark_failed(self, error_message: Optional[str] = None) -> None:
+        """
+        Mark the current run as failed with an optional error message.
+
+        This is a convenience method for explicitly marking a run as failed,
+        typically used when an adapter execution raises an exception.
+
+        Args:
+            error_message: Optional error message to log to MLflow
+
+        Raises:
+            RuntimeError: If no active run
+
+        Example:
+            >>> try:
+            ...     adapter.execute(config, tracker)
+            ... except Exception as e:
+            ...     tracker.mark_failed(str(e))
+        """
+        if self.active_run is None:
+            raise RuntimeError("No active run. Call start_run() first.")
+
+        if error_message:
+            # Log error message as a tag for visibility in MLflow UI
+            mlflow.set_tag("error_message", error_message)
+
+        # End the run with failed status
+        self.end_run(status="failed")
+
     def end_run(self, status: str = "completed") -> None:
         """
         End the active run with final status and duration.
