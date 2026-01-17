@@ -55,11 +55,29 @@
     - **Why?**: Biomass density is hard to estimate purely from 2D texture without depth (height) or spectral calibration (NDVI) information in this small dataset (357 images).
     - **Implication**: Visual features alone are **insufficient**.
 
-## Conclusion & Next Steps (Phase 3)
-- **Strategy**: **Multimodal Fusion** is required.
-- **Hypothesis**: Combining the strong "volume" signal from `Height/NDVI` with the "composition/texture" signal from Images will outperform either baseline.
+## Phase 3: Multimodal Modeling Results
+
+### 1. Multimodal Early Fusion (ResNet18 + MLP)
+- **Architecture**: ResNet18 (Image) + 3-Layer MLP (Tabular) -> Concat -> Fusion Head.
+- **Training**: 100 Epochs, AdamW, CosineAnnealing, SmoothL1Loss.
+- **Augmentations**: RandomCrop, Flip, Rotation, ColorJitter.
+- **Performance**:
+    - **Avg RMSE**: **14.33**
+    - **Avg R2**: **0.28**
+- **Target Breakdown**:
+    - **Best**: `GDM_g` (R2=0.67), `Dry_Green_g` (R2=0.54).
+    - **Poor**: `Dry_Dead_g` (R2=-0.19), `Dry_Clover_g` (R2=-0.10).
+- **Comparison**:
+    - **Vs Tabular**: Multimodal (**14.33 RMSE**) performs **worse** than Tabular Baseline (**10.92 RMSE**).
+    - **Vs Image**: Significantly better than Image-only (**28.6 RMSE**).
+- **Conclusion**:
+    - Adding images currently **degrades** performance compared to pure metadata.
+    - The small dataset size (357 images) likely causes the CNN branch to overfit or learn noise, confusing the fusion layer.
+    - **Recommendation for Phase 4**: Focus on the Tabular model for final submission, or try to regularize the image branch heavily (freeze weights, reduce complexity).
+
+## Conclusion & Next Steps (Phase 4)
+- **Strategy**: The Metadata signal (`Height`, `NDVI`) is the most reliable.
+- **Hypothesis**: Complex deep learning is overfitting. Ensemble tree-based methods (XGBoost/CatBoost) on metadata will likely yield the best leaderboard score.
 - **Plan**:
-    1.  Build a **Dual-Branch Network**:
-        - **Branch A**: MLP for Metadata.
-        - **Branch B**: CNN (EfficientNet/ResNet) for Images.
-    2.  **Fusion**: Concatenate features -> Regress 5 targets.
+    1.  **Refinement**: Optimize the XGBoost/CatBoost models.
+    2.  **Submission**: Generate final predictions using the Tabular pipeline.

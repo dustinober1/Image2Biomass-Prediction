@@ -20,18 +20,18 @@
     - [x] Train a ResNet18 predicting `Dry_Total_g` from images only. (RMSE ~28.6)
 
 ## Phase 3: Core Development (Multimodal)
-- [ ] **Data Loader**
-    - [ ] detailed implementation handling both Image and Tabular data.
-    - [ ] Augmentations (Flip, Rotate, ColorJitter).
-- [ ] **Model Architecture**
-    - [ ] Implement `BiomassPredictor` class.
-    - [ ] Image Encoder: EfficientNet or ResNet.
-    - [ ] Tabular Encoder: MLP.
-    - [ ] Fusion Layer: Concat -> Dense -> Output(5).
-- [ ] **Training Loop**
-    - [ ] Loss function (MSE or smooth L1).
-    - [ ] Optimizer (AdamW).
-    - [ ] Schedulers (CosineAnnealing).
+- [x] **Data Loader**
+    - [x] detailed implementation handling both Image and Tabular data.
+    - [x] Augmentations (Flip, Rotate, ColorJitter).
+- [x] **Model Architecture**
+    - [x] Implement `BiomassPredictor` class.
+    - [x] Image Encoder: EfficientNet or ResNet.
+    - [x] Tabular Encoder: MLP.
+    - [x] Fusion Layer: Concat -> Dense -> Output(5).
+- [x] **Training Loop**
+    - [x] Loss function (MSE or smooth L1).
+    - [x] Optimizer (AdamW).
+    - [x] Schedulers (CosineAnnealing).
 
 ## Phase 4: Refinement & Submission
 - [ ] **Evaluation**
