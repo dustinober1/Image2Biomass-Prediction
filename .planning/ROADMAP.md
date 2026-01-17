@@ -131,7 +131,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. Framework executes multiple experiments in parallel (batch mode)
 2. Framework manages GPU/CPU resource allocation for concurrent experiments
 
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+- [ ] 06-01-PLAN.md — Create BatchExecutor and ResourceManager with CLI extension (Wave 1, checkpoint:human-verify)
 
 ### Phase 7: Hyperparameter Optimization
 
@@ -156,5 +158,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Script Adapters & Auto-Logging | 1/1 | ✓ Complete | 2026-01-17 |
-| 6. Parallel Execution Infrastructure | 0/TBD | Not started | - |
+| 6. Parallel Execution Infrastructure | 0/1 | Not started | - |
 | 7. Hyperparameter Optimization | 0/TBD | Not started | - |
