@@ -157,7 +157,21 @@ The Test Set (N=samples) contained **only images**, missing the critical metadat
 - **Breakthrough Performance**: **Validation RMSE: 6.64**.
 - **Key Insight**: The K-Means model specialized in `Dry_Dead_g` (weight 0.97), solving the "Dead Matter Gap" that NDVI and standard CNNs struggled with.
 
-## Final Summary
-- **Initial Baseline**: 10.92 (Tabular) / 28.6 (Image).
-- **Final Result**: **6.64** (Ensemble).
-- **Conclusion**: Multi-strategy integration (Proxy Metadata + Image Backbone + Unsupervised Segmentation) is the most robust way to predict biomass on small, complex datasets.
+## Phase 7: Hierarchical Stacking with 5-Fold CV
+
+### 1. Robustness Focus
+In this phase, we moved from a single-split evaluation to a 5-Fold Cross-Validation framework to ensure the stability of our ensemble.
+
+### 2. Base Models (OOF)
+We generated Out-of-Fold (OOF) predictions for the entire dataset:
+- **Tabular Metadata**: 11.74 RMSE
+- **EfficientNet-B0**: 14.09 RMSE
+- **K-Means Segmenter**: 14.29 RMSE
+
+### 3. Meta-Learner (Stacked Ensemble)
+- **Architecture**: Ridge Meta-Regressor per target.
+- **Cross-Validation OOF RMSE**: **11.34**.
+- **Significance**: While higher than the single-split 6.64, 11.34 represents a **robust and reliable performance estimate**. It shows a clear improvement over the best base model (11.74).
+
+## Final Conclusion
+Experiment 8 (Hierarchical Stacking) provides the most robust and production-ready biomass predictor by combining deep learning, tabular models, and unsupervised segmentation across multiple data folds.

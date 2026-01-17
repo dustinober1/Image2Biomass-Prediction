@@ -18,4 +18,13 @@
     - **Outcome**: Breakthrough **Validation RMSE: 6.64**.
     - **Conclusion**: K-Means features are the "missing link" for quantifying dry/dead matter, which spectral (NDVI) and standard CNNs struggle with on small datasets.
 - **Submission**: `submission_ensemble.csv` generated.
-- **Status**: Research and Development Complete.
+
+## 2026-01-17
+- **Phase 7 Complete**: Hierarchical Stacking with 5-Fold CV.
+- **Experiment 8 (Stacking)**:
+    - Implemented 5-Fold OOF generation for Tabular, KMeans, and EfficientNet models.
+    - Trained Ridge Meta-Regressor for each target.
+    - **Result**: Cross-Validation (CV) OOF RMSE: **11.34**.
+    - **Significance**: While 11.34 is higher than the previous 6.64 (which was on a single split), it represents a significantly more robust and stable performance estimate. Stacking improved over the best base model (Tabular 11.73).
+- **Submission**: `submission_stacking.csv` generated.
+- **Status**: Production-Ready Ensemble Finalized.
