@@ -15,6 +15,7 @@ from .organizer import ExperimentOrganizer, create_group
 from .comparison import ExperimentComparator
 from .config_parser import ExperimentConfig, ConfigParser
 from .adapters import BaseAdapter, AdapterRegistry, PyTorchAdapter, SklearnAdapter
+from .cli import main, exp_run_command
 
 __all__ = [
     "ExperimentTracker",
@@ -31,5 +32,7 @@ __all__ = [
     "BaseAdapter",
     "AdapterRegistry",
     "PyTorchAdapter",
-    "SklearnAdapter"
+    "SklearnAdapter",
+    "main",
+    "exp_run_command"
 ]
