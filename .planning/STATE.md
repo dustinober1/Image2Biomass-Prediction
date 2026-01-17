@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2025-01-17)
 
 ## Current Position
 
-Phase: 4 of 7 (Configuration System)
-Plan: 4 of 4
-Status: Phase complete
-Last activity: 2026-01-17 — Completed Phase 4 Plan 4 (Concrete Adapter Implementations)
+Phase: 5 of 7 (Script Adapters & Auto-Logging)
+Plan: 1 of 1
+Status: Plan complete
+Last activity: 2026-01-17 — Completed Phase 5 Plan 1 (Auto-Logging for ML Frameworks)
 
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [░░░░░░░░░░] 0%
+Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [░░░░░░░░░░] 0% | Phase 7: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 3.0 min
-- Total execution time: 0.6 hours
+- Total execution time: 0.65 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 02-organization-discovery | 1 | 1 | 5.0 min |
 | 03-analysis-comparison | 1 | 1 | 3.0 min |
 | 04-configuration-system | 4 | 4 | 2.5 min |
+| 05-script-adapters-&-auto-logging | 1 | 1 | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 2.4 min avg (12 plans total)
+- Last 5 plans: 2.6 min avg (13 plans total)
 
 *Updated after each plan completion*
 
@@ -116,6 +117,14 @@ Recent decisions affecting current work:
 - Validate required parameters in validate_config() before execution (fail fast with clear error messages)
 - Three-step pattern for wrapping remaining scripts: register adapter, validate config, execute script
 
+**From 05-01-PLAN.md (Auto-Logging for ML Frameworks):**
+- Use MLflow's built-in autolog (mlflow.sklearn.autolog, mlflow.pytorch.autolog, mlflow.xgboost.autolog) for automatic metric capture
+- AutoLogger as context manager to ensure autolog is enabled only during training
+- SeedManager sets seeds for Python, NumPy, and PyTorch for complete reproducibility
+- Framework detection from script imports enables automatic adapter selection
+- random_seed parameter optional in PyTorchAdapter, required in SklearnAdapter
+- Adapters use _execute_with_autolog() helper method for consistent auto-logging pattern
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -130,9 +139,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17 17:27 UTC
-Completed: Phase 4 Plan 4 (Concrete Adapter Implementations) - All 4 tasks complete
-Next: Phase 5 (Integration Testing) or Phase 6 (Production Pipeline)
+Last session: 2026-01-17 17:43 UTC
+Completed: Phase 5 Plan 1 (Auto-Logging for ML Frameworks) - All 4 tasks complete
+Next: Phase 6 (Production Pipeline) or Phase 7 (Advanced Features)
 Resume file: None
 
 ## Phase 3 Deliverables
@@ -307,4 +316,39 @@ Configuration system complete. Ready to proceed with:
 - **Phase 5: Integration Testing** - End-to-end testing of experiment pipeline
 - **Phase 6: Production Pipeline** - Automated experiment execution and monitoring
 - **Phase 7: Advanced Features** - Distributed training, hyperparameter optimization, etc.
+
+## Phase 5 Deliverables
+
+**Completed: 2026-01-17**
+
+### Plan 1: Auto-Logging for ML Frameworks (05-01)
+
+**Completed: 2026-01-17**
+
+All requirements satisfied:
+
+- ✓ AutoLogger class with framework-specific autolog methods (sklearn, xgboost, pytorch)
+- ✓ SeedManager class for reproducible random seed control
+- ✓ Adapters integrated with AutoLogger and SeedManager
+- ✓ Framework detection from script imports
+- ✓ random_seed parameter support (optional for PyTorch, required for Sklearn)
+- ✓ Test script demonstrating auto-logging functionality
+- ✓ AutoLogger and SeedManager exported from mlflow_tracking package
+
+### Files Created
+- `mlflow_tracking/autolog.py` - AutoLogger class with context manager for MLflow autolog (189 lines)
+- `mlflow_tracking/seed_manager.py` - SeedManager class for reproducible random seeds (239 lines)
+- `mlflow_tracking/test_autolog.py` - Comprehensive test suite (327 lines)
+
+### Files Modified
+- `mlflow_tracking/adapters.py` - Integrated AutoLogger and SeedManager (+193 lines, -98 lines)
+- `mlflow_tracking/__init__.py` - Added exports for AutoLogger and SeedManager
+
+**Total Plan 01**: 755+ lines of code
+
+### Deviations from Plan
+None - plan executed exactly as written.
+
+### Ready for Next Phase
+Auto-logging infrastructure complete. Training scripts wrapped with adapters will automatically log metrics to MLflow without requiring manual logging code. Ready to proceed with production pipeline (Phase 6) or advanced features (Phase 7).
 
