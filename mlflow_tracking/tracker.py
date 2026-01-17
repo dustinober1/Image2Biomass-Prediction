@@ -14,6 +14,7 @@ from mlflow.client import MlflowClient
 from mlflow.entities import Experiment
 
 from mlflow_tracking.config import MLFLOW_TRACKING_URI
+from mlflow_tracking.environment import get_environment, log_environment_to_mlflow
 
 
 class ExperimentTracker:
@@ -37,13 +38,19 @@ class ExperimentTracker:
         >>> tracker.end_run(status="completed")
     """
 
-    def __init__(self, experiment_name: str, tracking_uri: Optional[str] = None):
+    def __init__(
+        self,
+        experiment_name: str,
+        tracking_uri: Optional[str] = None,
+        auto_log_environment: bool = True,
+    ):
         """
         Initialize MLflow client and get or create experiment.
 
         Args:
             experiment_name: Name of the experiment to track
             tracking_uri: Optional MLflow tracking URI (defaults to config)
+            auto_log_environment: If True, automatically log environment on run start
         """
         if tracking_uri is None:
             tracking_uri = MLFLOW_TRACKING_URI
@@ -62,14 +69,21 @@ class ExperimentTracker:
             self.experiment = self.client.get_experiment(experiment_id)
 
         self.active_run: Optional[mlflow.active_run] = None
+        self.auto_log_environment = auto_log_environment
 
-    def start_run(self, run_name: Optional[str] = None, tags: Optional[dict] = None) -> str:
+    def start_run(
+        self,
+        run_name: Optional[str] = None,
+        tags: Optional[dict] = None,
+        random_seed: Optional[int] = None,
+    ) -> str:
         """
         Start a new MLflow run with automatic status and timestamp tracking.
 
         Args:
             run_name: Optional name for the run
             tags: Optional dictionary of tags to associate with the run
+            random_seed: Optional random seed for reproducibility
 
         Returns:
             The unique run ID for the started run
@@ -82,6 +96,15 @@ class ExperimentTracker:
 
         mlflow.set_tag("status", "running")
         mlflow.set_tag("start_time", datetime.now().isoformat())
+
+        # Auto-log environment if enabled
+        if self.auto_log_environment:
+            log_environment_to_mlflow()
+
+        # Log random seed if provided
+        if random_seed is not None:
+            mlflow.log_param("random_seed", random_seed)
+
         return self.active_run.info.run_id
 
     def log_params(self, params: dict) -> None:
@@ -118,6 +141,17 @@ class ExperimentTracker:
         if self.active_run is None:
             raise RuntimeError("No active run. Call start_run() first.")
         mlflow.log_artifact(file_path, artifact_path)
+
+    def log_environment(self, env: Optional[dict] = None) -> None:
+        """
+        Manually log environment metadata to the active run.
+
+        Args:
+            env: Optional environment dict. If None, captures current environment.
+        """
+        if self.active_run is None:
+            raise RuntimeError("No active run. Call start_run() first.")
+        log_environment_to_mlflow(env)
 
     def end_run(self, status: str = "completed") -> None:
         """
