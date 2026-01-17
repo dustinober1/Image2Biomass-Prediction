@@ -117,15 +117,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONFIG-03 | Phase 4 | Pending |
 | INTEGRATION-01 | Phase 4 | Pending |
 | INTEGRATION-02 | Phase 5 | Pending |
-| INFRA-01 | Phase 5 | Pending |
-| INFRA-02 | Phase 5 | Pending |
+| INFRA-01 | Phase 6 | Pending |
+| INFRA-02 | Phase 6 | Pending |
 | INFRA-03 | Phase 5 | Pending |
 | REPRO-01 | Phase 1 | Pending |
 | REPRO-02 | Phase 1 | Pending |
 | REPRO-03 | Phase 1 | Pending |
-| OPT-01 | Phase 6 | Pending |
-| OPT-02 | Phase 6 | Pending |
-| OPT-03 | Phase 6 | Pending |
+| OPT-01 | Phase 7 | Pending |
+| OPT-02 | Phase 7 | Pending |
+| OPT-03 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
@@ -134,4 +134,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-17*
-*Last updated: 2025-01-17 after initial definition*
+*Last updated: 2025-01-17 after roadmap creation*
