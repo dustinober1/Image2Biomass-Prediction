@@ -153,6 +153,87 @@ class ExperimentTracker:
             raise RuntimeError("No active run. Call start_run() first.")
         log_environment_to_mlflow(env)
 
+    def add_tags(self, tags: dict) -> None:
+        """
+        Add tags to the currently active run.
+
+        Tags are useful for organizing and filtering experiments, such as
+        model_type, phase, or purpose. This is a convenience wrapper around
+        mlflow.set_tags() for consistency with our SDK.
+
+        Args:
+            tags: Dictionary of tag key-value pairs
+
+        Raises:
+            RuntimeError: If no active run
+
+        Example:
+            >>> tracker = ExperimentTracker("my_experiment")
+            >>> tracker.start_run("experiment_1")
+            >>> tracker.add_tags({
+            ...     "model_type": "random_forest",
+            ...     "phase": "feature_ablation",
+            ...     "purpose": "baseline"
+            ... })
+        """
+        if self.active_run is None:
+            raise RuntimeError("No active run. Call start_run() first.")
+        mlflow.set_tags(tags)
+
+    def set_group(self, group_name: str, create_if_missing: bool = True) -> None:
+        """
+        Set the MLflow experiment (group) for the current run.
+
+        Groups are logical containers for organizing related experiments.
+        This method must be called BEFORE start_run() to take effect,
+        as it sets the active experiment for subsequent runs.
+
+        Args:
+            group_name: Name of the experiment group
+            create_if_missing: If True, creates the experiment if it doesn't exist
+
+        Raises:
+            ValueError: If group_name is empty
+
+        Example:
+            >>> tracker = ExperimentTracker("my_experiment")
+            >>> tracker.set_group("ablation-studies")  # Must be before start_run()
+            >>> tracker.start_run("experiment_1")
+        """
+        if not group_name or not isinstance(group_name, str):
+            raise ValueError("group_name must be a non-empty string")
+
+        if create_if_missing:
+            # Ensure experiment exists
+            experiment = self.client.get_experiment_by_name(group_name)
+            if experiment is None:
+                self.client.create_experiment(group_name)
+
+        mlflow.set_experiment(group_name)
+
+    def get_run_id(self) -> str:
+        """
+        Get the run ID of the currently active run.
+
+        Useful for passing to ExperimentOrganizer methods or for
+        manual run manipulation.
+
+        Returns:
+            The unique run ID of the active run
+
+        Raises:
+            RuntimeError: If no active run
+
+        Example:
+            >>> tracker = ExperimentTracker("my_experiment")
+            >>> tracker.start_run("experiment_1")
+            >>> run_id = tracker.get_run_id()
+            >>> print(f"Current run: {run_id}")
+        """
+        if self.active_run is None:
+            raise RuntimeError("No active run. Call start_run() first.")
+        return self.active_run.info.run_id
+
     def end_run(self, status: str = "completed") -> None:
         """
         End the active run with final status and duration.

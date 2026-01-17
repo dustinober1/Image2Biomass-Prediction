@@ -11,6 +11,7 @@ __version__ = "0.1.0"
 from .tracker import ExperimentTracker
 from .data_split import DataSplitter, create_canonical_splits
 from .environment import get_environment, get_git_hash, get_package_versions
+from .organizer import ExperimentOrganizer, create_group
 
 __all__ = [
     "ExperimentTracker",
@@ -18,5 +19,7 @@ __all__ = [
     "create_canonical_splits",
     "get_environment",
     "get_git_hash",
-    "get_package_versions"
+    "get_package_versions",
+    "ExperimentOrganizer",
+    "create_group"
 ]
