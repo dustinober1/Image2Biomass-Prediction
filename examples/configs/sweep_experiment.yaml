@@ -1,0 +1,33 @@
+# Hyperparameter Sweep Configuration
+#
+# This configuration demonstrates parameter sweeps using Jinja2 templating
+# and grid search definitions for learning rate and batch size tuning.
+
+experiment_name: hyperparameter_sweep
+run_name: "effnet_lr{{lr}}_bs{{bs}}"
+adapter: pytorch
+description: "Learning rate and batch size sweep for EfficientNet"
+
+# Hyperparameters with Jinja2 template variables
+parameters:
+  model_name: "efficientnet_b0"
+  epochs: 30
+  learning_rate: "{{lr}}"
+  batch_size: "{{bs}}"
+  image_size: 224
+  use_tta: true
+
+# Grid search definition - generates 3 x 3 = 9 experiments
+sweep:
+  grid:
+    lr: [0.0001, 0.0005, 0.001]
+    bs: [8, 16, 32]
+
+# MLflow tags for organizing sweep experiments
+tags:
+  model_type: "cnn"
+  purpose: "hyperparameter_search"
+  phase: "single_model"
+
+# Random seed for reproducibility
+random_seed: 42
