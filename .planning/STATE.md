@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2025-01-17)
 
 **Core value:** Understand what drives biomass predictions through systematic experimentation
-**Current focus:** **Phase 11: Batch Organization Improvements** - Complete ✓
+**Current focus:** **Phase 12: Flexible Script Paths** - Complete ✓
 
 ## Current Position
 
-Phase: 11 - Batch Organization Improvements
+Phase: 12 - Flexible Script Paths
 Plan: 01 of 1
 Status: Complete
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [██████████] 100% | Phase 9: [██████████] 100% | Phase 10: [██████████] 100% | Phase 11: [██████████] 100%
+Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [██████████] 100% | Phase 9: [██████████] 100% | Phase 10: [██████████] 100% | Phase 11: [██████████] 100% | Phase 12: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 26
 - Average duration: 3.8 min
-- Total execution time: 1.58 hours
+- Total execution time: 1.65 hours
 
 **By Phase:**
 
@@ -36,9 +36,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 09-analytics-data-pipeline-integration | 1 | 1 | 1.0 min |
 | 10-canonical-splits-enforcement | 1 | 1 | 4.0 min |
 | 11-batch-organization-improvements | 1 | 1 | 3.0 min |
+| 12-flexible-script-paths | 1 | 1 | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 3.0 min avg (25 plans total)
+- Last 5 plans: 3.0 min avg (26 plans total)
 
 *Updated after each plan completion*
 
@@ -193,6 +194,14 @@ Recent decisions affecting current work:
 - Add metadata tags (batch_size, source) for filtering and discoverability
 - Preserve all existing BatchExecutor functionality while adding groups
 
+**From 12-01-PLAN.md (Flexible Script Paths):**
+- Made script_path optional (default None) for backward compatibility with existing configs
+- Path validation only when script_path is provided (validator returns early if None)
+- Adapter fallback pattern: `config.script_path or "hardcoded_default"` maintains backward compatibility
+- Deprecation warnings notify users that script_path will be required in future versions
+- Path existence validation prevents execution with non-existent scripts
+- .py extension validation ensures only Python scripts can be specified
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -213,9 +222,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17 21:08 UTC
-Completed: Phase 11 Plan 1 (Batch Organization Improvements) - All 3 tasks complete
-Next: Phase 12 (Flexible Script Paths) or next phase
+Last session: 2026-01-18 12:36 UTC
+Completed: Phase 12 Plan 1 (Flexible Script Paths) - All 3 tasks complete
+Next: Phase 13 (Model Registry) or next phase
 Resume file: None
 
 ## Phase 3 Deliverables
@@ -813,4 +822,51 @@ All requirements satisfied. Batch organization improvements complete. BatchExecu
 - **Phase 12**: Flexible Script Paths
 - **Phase 13**: Model Registry
 - **Phase 14**: Deployment
+
+## Phase 12 Deliverables
+
+**Started: 2026-01-18**
+
+### Plan 1: Flexible Script Paths (12-01)
+
+**Completed: 2026-01-18**
+
+All requirements satisfied:
+
+- ExperimentConfig schema includes script_path field with Optional[str] type
+- validate_script_path field_validator checks file existence and .py extension
+- PyTorchAdapter uses config.script_path with fallback to "scripts/train_oof_effnet.py"
+- SklearnAdapter uses config.script_path with fallback to "scripts/train_ridge_advanced.py"
+- Both adapters emit deprecation warnings when script_path not provided
+- Example configs (pytorch_effnet.yaml, sklearn_ridge.yaml) demonstrate script_path usage
+- examples/configs/README.md documents script_path in optional fields and best practices
+
+### Files Modified
+- `mlflow_tracking/config_parser.py` - Added script_path field and validate_script_path field_validator (18 lines added)
+- `mlflow_tracking/adapters.py` - Updated both adapters to use config.script_path with fallback, added deprecation warnings (20 lines added, 2 removed)
+- `examples/configs/adapter_examples/pytorch_effnet.yaml` - Added script_path field (1 line added)
+- `examples/configs/adapter_examples/sklearn_ridge.yaml` - Added script_path field (1 line added)
+- `examples/configs/README.md` - Documented script_path in optional fields, best practices, and adapter examples (8 lines added, 3 removed)
+
+### Files Created
+- `.planning/phases/12-flexible-script-paths/12-01-SUMMARY.md` - Plan summary with accomplishments and verification
+
+### Deviations from Plan
+None - plan executed exactly as written.
+
+### Gap Closure Status
+**Gap 4 (Hardcoded Script Paths in Adapters) from v1-MILESTONE-AUDIT.md is now CLOSED.**
+
+### Key Decisions
+- Made script_path optional (default None) for backward compatibility with existing configs
+- Path validation only when script_path is provided (returns early if None)
+- Adapter fallback pattern: `config.script_path or "hardcoded_default"` maintains backward compatibility
+- Deprecation warnings notify users that script_path will be required in future versions
+
+### Ready for Next Phase
+All requirements satisfied. Flexible script paths feature complete. Users can now specify training scripts in YAML configs instead of modifying adapter code. Ready to proceed with:
+- **Phase 12 Plan 02**: Additional flexible script path improvements (if needed)
+- **Phase 13**: Model Registry
+- **Phase 14**: Deployment
+- **Phase 15**: Additional features (TBD)
 
