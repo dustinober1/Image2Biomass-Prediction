@@ -8,6 +8,7 @@ in parallel with automatic resource management and progress monitoring.
 import os
 import time
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Callable
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ from mlflow_tracking.config_parser import ExperimentConfig, ConfigParser
 from mlflow_tracking.resource_manager import ResourceManager, ResourceToken
 from mlflow_tracking.tracker import ExperimentTracker
 from mlflow_tracking.adapters import AdapterRegistry
+from mlflow_tracking.organizer import ExperimentOrganizer
 
 
 @dataclass
@@ -77,6 +79,7 @@ class BatchExecutor:
     Attributes:
         resource_manager: ResourceManager instance for resource allocation
         adapter_registry: AdapterRegistry for retrieving adapters
+        organizer: ExperimentOrganizer for creating experiment groups
 
     Example:
         >>> executor = BatchExecutor()
@@ -100,6 +103,7 @@ class BatchExecutor:
         """
         self.resource_manager = resource_manager or ResourceManager()
         self.adapter_registry = adapter_registry or AdapterRegistry()
+        self.organizer = ExperimentOrganizer()
 
     def load_configs(self, config_paths: List[str]) -> List[ExperimentConfig]:
         """
@@ -149,11 +153,22 @@ class BatchExecutor:
         config_files = sorted(dir_path.glob(pattern))
         return self.load_configs([str(f) for f in config_files])
 
+    def _generate_batch_group_name(self) -> str:
+        """
+        Generate a timestamp-based group name for batch experiments.
+
+        Returns:
+            Group name in format "batch-YYYY-MM-DD-HHMMSS"
+        """
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+        return f"batch-{timestamp}"
+
     def _execute_single_experiment(
         self,
         config: ExperimentConfig,
         gpu_id: Optional[int] = None,
-        tracker: Optional[ExperimentTracker] = None
+        tracker: Optional[ExperimentTracker] = None,
+        experiment_id: Optional[str] = None
     ) -> ExperimentResult:
         """
         Execute a single experiment with error handling.
@@ -162,6 +177,7 @@ class BatchExecutor:
             config: Experiment configuration
             gpu_id: GPU ID to use (if allocated)
             tracker: ExperimentTracker instance (creates new if None)
+            experiment_id: MLflow experiment ID for group organization
 
         Returns:
             ExperimentResult with execution outcome
@@ -191,7 +207,8 @@ class BatchExecutor:
             run_id = tracker.start_run(
                 config.run_name,
                 tags=config.tags,
-                random_seed=config.random_seed
+                random_seed=config.random_seed,
+                experiment_id=experiment_id
             )
 
             # Log parameters
@@ -231,7 +248,8 @@ class BatchExecutor:
         self,
         config: ExperimentConfig,
         resource_token: Optional[ResourceToken] = None,
-        tracker: Optional[ExperimentTracker] = None
+        tracker: Optional[ExperimentTracker] = None,
+        experiment_id: Optional[str] = None
     ) -> ExperimentResult:
         """
         Execute experiment with resource token (if provided).
@@ -240,12 +258,13 @@ class BatchExecutor:
             config: Experiment configuration
             resource_token: ResourceToken from ResourceManager
             tracker: ExperimentTracker instance
+            experiment_id: MLflow experiment ID for group organization
 
         Returns:
             ExperimentResult with execution outcome
         """
         gpu_id = resource_token.gpu_id if resource_token else None
-        return self._execute_single_experiment(config, gpu_id, tracker)
+        return self._execute_single_experiment(config, gpu_id, tracker, experiment_id)
 
     def execute_batch(
         self,
@@ -259,6 +278,10 @@ class BatchExecutor:
         """
         Execute multiple experiments in parallel.
 
+        Automatically creates an experiment group for batch runs with timestamp-based
+        naming and metadata tags. All experiments in the batch are organized under
+        this group in MLflow.
+
         Args:
             configs: List of experiment configurations
             max_workers: Maximum number of concurrent experiments (auto-suggest if None)
@@ -269,11 +292,27 @@ class BatchExecutor:
 
         Returns:
             List of ExperimentResult in same order as input configs
+
+        Note:
+            Creates a batch group with name format "batch-YYYY-MM-DD-HHMMSS" and
+            metadata tags (batch_size, source). Experiments are organized under this
+            group for discoverability in MLflow UI.
         """
         if not configs:
             if verbose:
                 print("No configs to execute")
             return []
+
+        # Create experiment group for batch
+        group_name = self._generate_batch_group_name()
+        group_tags = {
+            "batch_size": str(len(configs)),
+            "source": "batch_executor"
+        }
+        experiment_id = self.organizer.create_group(group_name, tags=group_tags)
+
+        if verbose:
+            print(f"Created batch group: {group_name}")
 
         # Auto-suggest max_workers if not provided
         if max_workers is None:
@@ -323,7 +362,7 @@ class BatchExecutor:
                     pass
 
             # Execute experiment
-            result = self._execute_with_resource_management(config)
+            result = self._execute_with_resource_management(config, experiment_id=experiment_id)
 
             update_progress(running=-1)
             if result.status == 'completed':
