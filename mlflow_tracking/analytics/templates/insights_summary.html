@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Insights Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 1200px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #27ae60;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c3e50;
+        }
+        .run-id {
+            font-family: 'Courier New', monospace;
+            background: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .recommendation-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .recommendation-box h4 {
+            color: white;
+        }
+        .significant {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        .not-significant {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        .effect-large {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .effect-medium {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        .effect-small {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .stat-table th {
+            background-color: #27ae60;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Automated Insights Report</h1>
+            <p class="text-muted">Generated: {{ generated_at }}</p>
+            <p><strong>Analyzed {{ run_ids|length }} run(s):</strong></p>
+            <div class="mb-3">
+                {% for run_id in run_ids %}
+                <span class="run-id me-2">{{ run_id }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if best_run != 'N/A' %}
+        <section class="mb-4">
+            <h2>Best Performing Run</h2>
+            <div class="alert alert-success">
+                <strong>Run ID:</strong> <span class="run-id">{{ best_run }}</span>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if summary_statistics %}
+        <section class="mb-4">
+            <h2>Summary Statistics</h2>
+            <table class="table table-striped stat-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if summary_statistics.mean %}
+                    <tr>
+                        <td>Mean</td>
+                        <td>{{ summary_statistics.mean|round(4) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if summary_statistics.std %}
+                    <tr>
+                        <td>Standard Deviation</td>
+                        <td>{{ summary_statistics.std|round(4) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if summary_statistics.min %}
+                    <tr>
+                        <td>Minimum</td>
+                        <td>{{ summary_statistics.min|round(4) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if summary_statistics.max %}
+                    <tr>
+                        <td>Maximum</td>
+                        <td>{{ summary_statistics.max|round(4) }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        {% if statistical_tests %}
+        <section class="mb-4">
+            <h2>Statistical Tests</h2>
+            <p class="text-muted">Results of statistical significance testing between experiment groups</p>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Test</th>
+                        <th>p-value</th>
+                        <th>Effect Size</th>
+                        <th>Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in statistical_tests %}
+                    <tr class="{% if test.effect_size >= 0.8 %}effect-large{% elif test.effect_size >= 0.5 %}effect-medium{% else %}effect-small{% endif %}">
+                        <td><strong>{{ test.name }}</strong></td>
+                        <td class="{% if test.p_value < 0.05 %}significant{% else %}not-significant{% endif %}">
+                            {{ test.p_value|round(4) }}
+                        </td>
+                        <td>{{ test.effect_size|round(4) }}</td>
+                        <td>{{ test.interpretation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="alert alert-info mt-3">
+                <h6>Understanding Statistical Significance</h6>
+                <ul class="mb-0">
+                    <li><strong>p-value < 0.05:</strong> Result is statistically significant</li>
+                    <li><strong>Effect size:</strong> Magnitude of difference (large >= 0.8, medium >= 0.5, small >= 0.2)</li>
+                </ul>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if recommendation %}
+        <section class="mb-4">
+            <div class="recommendation-box">
+                <h4><i class="bi bi-lightbulb"></i> Recommendation</h4>
+                <p class="mb-0">{{ recommendation }}</p>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if correlations %}
+        <section class="mb-4">
+            <h2>Hyperparameter Correlations</h2>
+            <p class="text-muted">Pearson correlation between hyperparameters and performance metrics</p>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Correlation</th>
+                        <th>Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for corr in correlations %}
+                    <tr>
+                        <td><strong>{{ corr.parameter }}</strong></td>
+                        <td>{{ corr.correlation|round(4) }}</td>
+                        <td>{{ corr.interpretation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        {% if rankings %}
+        <section class="mb-4">
+            <h2>Experiment Rankings</h2>
+            <p class="text-muted">Experiments ranked by composite score across all metrics</p>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Run ID</th>
+                        <th>Composite Score</th>
+                        <th>Metrics</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in rankings %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><span class="run-id">{{ exp.run_id }}</span></td>
+                        <td><strong>{{ exp.score|round(4) }}</strong></td>
+                        <td>
+                            <small>
+                            {% if exp.metrics %}
+                                {% for metric_name, metric_value in exp.metrics.items() %}
+                                    {{ metric_name }}: {{ metric_value|round(4) }}<br>
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        <footer class="mt-5 pt-3 border-top">
+            <p class="text-muted text-center">
+                <small>Generated by MLflow Analytics - Insights Generator Module</small>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
