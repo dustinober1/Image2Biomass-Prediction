@@ -1,8 +1,9 @@
 """
-MLflow Analytics - Error analysis and model interpretability.
+MLflow Analytics - Error analysis, model interpretability, and insights generation.
 
 This module provides tools for analyzing prediction errors, identifying
-systematic failure modes, and explaining model predictions using SHAP and ELI5.
+systematic failure modes, explaining model predictions using SHAP and ELI5,
+and generating automated insights from experiment comparisons.
 """
 
 from mlflow_tracking.analytics.error_analyzer import ErrorAnalyzer
@@ -19,6 +20,12 @@ from mlflow_tracking.analytics.interpretability import (
     plot_local_explanation,
     compute_permutation_importance,
 )
+from mlflow_tracking.analytics.insights_generator import (
+    InsightsGenerator,
+    generate_insights,
+    compare_hyperparameters,
+    rank_experiments,
+)
 
 __all__ = [
     "ErrorAnalyzer",
@@ -31,4 +38,8 @@ __all__ = [
     "plot_feature_importance",
     "plot_local_explanation",
     "compute_permutation_importance",
+    "InsightsGenerator",
+    "generate_insights",
+    "compare_hyperparameters",
+    "rank_experiments",
 ]

@@ -597,3 +597,97 @@ class InsightsGenerator:
             direction = "worse"
 
         return f"{strength} correlation between {param_name} and {metric}. Higher {param_name} associated with {direction} {metric}."
+
+
+# Convenience functions for common operations
+def generate_insights(
+    run_ids: List[str],
+    metric: str = "val.rmse",
+    group_by: Optional[str] = None,
+    alpha: float = 0.05,
+    min_sample_size: int = 5,
+    tracking_uri: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Generate automated insights from multiple runs.
+
+    Convenience function that creates an InsightsGenerator instance
+    and calls generate_insights().
+
+    Args:
+        run_ids: List of run IDs to analyze
+        metric: Metric name to analyze (default: "val.rmse")
+        group_by: Optional parameter to group by (e.g., "params.learning_rate")
+        alpha: Significance level (default: 0.05)
+        min_sample_size: Minimum runs required for analysis (default: 5)
+        tracking_uri: Optional MLflow tracking URI
+
+    Returns:
+        Dictionary with insights (same as InsightsGenerator.generate_insights())
+    """
+    generator = InsightsGenerator(tracking_uri=tracking_uri)
+    return generator.generate_insights(
+        run_ids=run_ids,
+        metric=metric,
+        group_by=group_by,
+        alpha=alpha,
+        min_sample_size=min_sample_size,
+    )
+
+
+def compare_hyperparameters(
+    run_ids: List[str],
+    metric: str = "val.rmse",
+    top_n: int = 10,
+    tracking_uri: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Analyze hyperparameter correlations with performance.
+
+    Convenience function that creates an InsightsGenerator instance
+    and calls compare_hyperparameters().
+
+    Args:
+        run_ids: List of run IDs to analyze
+        metric: Metric name to analyze (default: "val.rmse")
+        top_n: Number of top hyperparameters to return (default: 10)
+        tracking_uri: Optional MLflow tracking URI
+
+    Returns:
+        DataFrame with hyperparameter correlations
+    """
+    generator = InsightsGenerator(tracking_uri=tracking_uri)
+    return generator.compare_hyperparameters(
+        run_ids=run_ids,
+        metric=metric,
+        top_n=top_n,
+    )
+
+
+def rank_experiments(
+    run_ids: List[str],
+    metrics: List[str] = ["val.rmse", "val.mae"],
+    weights: Optional[List[float]] = None,
+    tracking_uri: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Rank experiments by multiple metrics.
+
+    Convenience function that creates an InsightsGenerator instance
+    and calls rank_experiments().
+
+    Args:
+        run_ids: List of run IDs to rank
+        metrics: List of metric names to consider (default: ["val.rmse", "val.mae"])
+        weights: Optional weights for each metric (equal weights if None)
+        tracking_uri: Optional MLflow tracking URI
+
+    Returns:
+        DataFrame with ranked experiments
+    """
+    generator = InsightsGenerator(tracking_uri=tracking_uri)
+    return generator.rank_experiments(
+        run_ids=run_ids,
+        metrics=metrics,
+        weights=weights,
+    )

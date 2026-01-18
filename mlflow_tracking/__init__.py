@@ -34,6 +34,10 @@ from .analytics import (
     plot_feature_importance,
     plot_local_explanation,
     compute_permutation_importance,
+    InsightsGenerator,
+    generate_insights,
+    compare_hyperparameters,
+    rank_experiments,
 )
 
 __all__ = [
@@ -79,4 +83,8 @@ __all__ = [
     "plot_feature_importance",
     "plot_local_explanation",
     "compute_permutation_importance",
+    "InsightsGenerator",
+    "generate_insights",
+    "compare_hyperparameters",
+    "rank_experiments",
 ]
