@@ -16,15 +16,8 @@ import yaml
 from pathlib import Path
 from typing import Optional, List
 
-from mlflow_tracking import (
-    ConfigParser,
-    ExperimentTracker,
-    AdapterRegistry,
-    BatchExecutor,
-    ResourceManager,
-    OptunaOptimizer,
-    ExperimentConfig,
-)
+# Lazy imports to avoid circular dependency with __init__.py
+# These are imported within functions when needed
 
 
 def exp_run_command(
@@ -42,6 +35,10 @@ def exp_run_command(
     Returns:
         0 on success, 1 on failure
     """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import ConfigParser, ExperimentTracker
+    from mlflow_tracking.adapters import AdapterRegistry
+
     try:
         # Load config(s)
         if sweep:
@@ -180,6 +177,9 @@ def exp_run_batch_command(
     Returns:
         0 on success, 1 on partial failure, 2 on batch error, 3 on resource error
     """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import BatchExecutor, ResourceManager
+
     try:
         # Validate inputs
         if not dir_path and not configs:
@@ -339,6 +339,10 @@ def exp_run_optimize_command(
     Returns:
         0 on success, 1 on optimization error, 2 on config error
     """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import ConfigParser, ExperimentTracker, OptunaOptimizer
+    from mlflow_tracking.adapters import AdapterRegistry
+
     try:
         # Load config
         if verbose:

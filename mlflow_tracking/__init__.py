@@ -22,6 +22,15 @@ from .resource_manager import ResourceManager
 from .batch_executor import BatchExecutor, ExperimentResult, BatchProgress
 from .optuna_optimizer import OptunaOptimizer, create_optimization_config, suggest_params_from_trial
 
+# Import analytics module (error analysis and visualization)
+from .analytics import (
+    ErrorAnalyzer,
+    plot_residuals,
+    plot_error_distribution,
+    plot_prediction_vs_actual,
+    plot_failure_modes,
+)
+
 __all__ = [
     "ExperimentTracker",
     "DataSplitter",
@@ -55,4 +64,9 @@ __all__ = [
     "OptunaOptimizer",
     "create_optimization_config",
     "suggest_params_from_trial",
+    "ErrorAnalyzer",
+    "plot_residuals",
+    "plot_error_distribution",
+    "plot_prediction_vs_actual",
+    "plot_failure_modes",
 ]

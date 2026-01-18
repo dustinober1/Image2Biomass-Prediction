@@ -86,13 +86,15 @@ class ErrorAnalyzer:
         # Handle local file:// URIs
         if artifact_uri.startswith("file://"):
             artifact_path = artifact_uri.replace("file://", "")
+            # Construct full path to predictions file
+            predictions_file = os.path.join(artifact_path, predictions_path)
         else:
             # For non-local URIs, download to temp directory
             temp_dir = tempfile.mkdtemp()
-            artifact_path = self.client.download_artifacts(run_id, predictions_path, temp_dir)
-
-        # Construct full path to predictions file
-        predictions_file = os.path.join(artifact_path, predictions_path)
+            # download_artifacts returns the path to the downloaded directory
+            # If predictions_path is a file, it will be downloaded as temp_dir/predictions_path
+            self.client.download_artifacts(run_id, predictions_path, temp_dir)
+            predictions_file = os.path.join(temp_dir, predictions_path)
 
         # Check if file exists
         if not os.path.exists(predictions_file):
