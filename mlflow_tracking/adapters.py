@@ -278,6 +278,7 @@ class PyTorchAdapter(BaseAdapter):
             use_tta: bool (default false)
             pretrained: bool (default true)
             random_seed: int (for reproducibility, validated if present)
+            script_path: str (path to training script, recommended)
         """
         required = ['model_name', 'batch_size', 'epochs', 'learning_rate']
 
@@ -300,6 +301,14 @@ class PyTorchAdapter(BaseAdapter):
         if 'random_seed' in config.parameters:
             SeedManager.validate_seed(config.parameters['random_seed'])
 
+        # Warn if script_path not provided (backward compatibility)
+        if config.script_path is None:
+            import warnings
+            warnings.warn(
+                "script_path not provided in config. Using default script path. "
+                "Future versions will require script_path to be specified."
+            )
+
         return True
 
     def execute(self, config: ExperimentConfig, tracker) -> Dict[str, float]:
@@ -321,7 +330,7 @@ class PyTorchAdapter(BaseAdapter):
             subprocess.CalledProcessError: If script fails
             ValueError: If script doesn't output JSON metrics or framework detection fails
         """
-        script_path = "scripts/train_oof_effnet.py"
+        script_path = config.script_path or "scripts/train_oof_effnet.py"
 
         # Detect framework from script imports
         framework = AutoLogger.detect_framework(script_path)
@@ -473,6 +482,7 @@ class SklearnAdapter(BaseAdapter):
             n_estimators: int (for XGBoost, Random Forest)
             max_depth: int (for tree-based models)
             fit_intercept: bool (for linear models)
+            script_path: str (path to training script, recommended)
         """
         required = ['model_type', 'random_seed']
 
@@ -493,6 +503,14 @@ class SklearnAdapter(BaseAdapter):
 
         # Validate random_seed (required for sklearn)
         SeedManager.validate_seed(config.parameters['random_seed'])
+
+        # Warn if script_path not provided (backward compatibility)
+        if config.script_path is None:
+            import warnings
+            warnings.warn(
+                "script_path not provided in config. Using default script path. "
+                "Future versions will require script_path to be specified."
+            )
 
         return True
 
@@ -515,7 +533,7 @@ class SklearnAdapter(BaseAdapter):
             subprocess.CalledProcessError: If script fails
             ValueError: If script doesn't output JSON metrics or framework detection fails
         """
-        script_path = "scripts/train_ridge_advanced.py"
+        script_path = config.script_path or "scripts/train_ridge_advanced.py"
 
         # Detect framework from script imports
         framework = AutoLogger.detect_framework(script_path)
