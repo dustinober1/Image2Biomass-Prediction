@@ -255,6 +255,82 @@ def test_experiment_result_structure():
     print("✓ ExperimentResult structure works correctly")
 
 
+def test_batch_group_creation():
+    """Test batch group creation and organization."""
+    print("\n=== Test: Batch Group Creation ===")
+
+    from mlflow_tracking.batch_executor import BatchExecutor
+    from mlflow_tracking.organizer import ExperimentOrganizer
+    from mlflow_tracking.config_parser import ConfigParser
+    from pathlib import Path
+    import os
+
+    # Create BatchExecutor instance
+    executor = BatchExecutor()
+    organizer = ExperimentOrganizer()
+
+    # Check batch configs directory
+    batch_dir = Path("examples/configs/batch")
+    if not batch_dir.exists():
+        print("Batch configs directory not found, skipping test")
+        return
+
+    # Load example batch configs (use first 2 for testing)
+    config_files = sorted(batch_dir.glob("*.yaml"))[:2]
+    if len(config_files) < 1:
+        print("Not enough batch configs for testing, skipping")
+        return
+
+    print(f"Loading {len(config_files)} config(s) for test")
+    configs = []
+    for config_file in config_files:
+        try:
+            config = ConfigParser.load_config(str(config_file))
+            configs.append(config)
+            print(f"  ✓ Loaded: {config_file.name}")
+        except Exception as e:
+            print(f"  ✗ Failed to load {config_file.name}: {e}")
+
+    if not configs:
+        print("No configs loaded, skipping test")
+        return
+
+    # Get group name that would be generated
+    group_name = executor._generate_batch_group_name()
+    print(f"Generated group name: {group_name}")
+
+    # Verify group name format
+    assert group_name.startswith("batch-"), f"Group name should start with 'batch-', got: {group_name}"
+    parts = group_name.split("-")
+    assert len(parts) == 5, f"Group name should have 5 parts (batch-YYYY-MM-DD-HHMMSS), got {len(parts)}: {group_name}"
+    print("✓ Group name format is correct (batch-YYYY-MM-DD-HHMMSS)")
+
+    # Create group manually to verify
+    group_tags = {"batch_size": str(len(configs)), "source": "batch_executor"}
+    experiment_id = organizer.create_group(group_name, tags=group_tags)
+    print(f"Created group with ID: {experiment_id}")
+
+    # Verify group was created by listing groups
+    groups = organizer.list_groups()
+    created_group = None
+    for group in groups:
+        if group["name"] == group_name:
+            created_group = group
+            break
+
+    assert created_group is not None, f"Group {group_name} not found in list_groups()"
+    print(f"✓ Group found in list_groups()")
+
+    # Verify group tags
+    assert created_group.get("tags", {}).get("batch_size") == str(len(configs)), \
+        f"Group should have batch_size tag = {len(configs)}"
+    assert created_group.get("tags", {}).get("source") == "batch_executor", \
+        "Group should have source tag = 'batch_executor'"
+    print(f"✓ Group tags are correct: {created_group.get('tags', {})}")
+
+    print("✓ Batch group creation test passed")
+
+
 def main():
     """Run all tests."""
     print("=" * 60)
@@ -273,6 +349,7 @@ def main():
         test_batch_executor_progress,
         test_batch_executor_dry_run,
         test_experiment_result_structure,
+        test_batch_group_creation,
     ]
 
     passed = 0
