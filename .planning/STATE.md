@@ -5,20 +5,20 @@
 See: .planning/PROJECT.md (updated 2025-01-17)
 
 **Core value:** Understand what drives biomass predictions through systematic experimentation
-**Current focus:** **Phase 8: Advanced Analytics** - Error analysis, model interpretability, and insights generation
+**Current focus:** **Phase 9: Analytics Data Pipeline Integration** - Gap closure and end-to-end analytics workflow
 
 ## Current Position
 
-Phase: 08 - Advanced Analytics
-Status: Complete
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [██████████] 100%
+Phase: 09 - Analytics Data Pipeline Integration
+Status: In progress
+Progress: Phase 1: [██████████] 100% | Phase 2: [          ] 0% | Phase 3: [          ] 0% | Phase 4: [          ] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
-- Average duration: 4.0 min
-- Total execution time: 1.47 hours
+- Total plans completed: 23
+- Average duration: 3.9 min
+- Total execution time: 1.50 hours
 
 **By Phase:**
 
@@ -32,9 +32,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 06-parallel-execution-infrastructure | 1 | 1 | 8.0 min |
 | 07-hyperparameter-optimization | 1 | 1 | 4.0 min |
 | 08-advanced-analytics | 4 | 4 | 7.5 min |
+| 09-analytics-data-pipeline-integration | 1 | 1 | 1.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 6.6 min avg (22 plans total)
+- Last 5 plans: 5.5 min avg (23 plans total)
 
 *Updated after each plan completion*
 
@@ -168,6 +169,14 @@ Recent decisions affecting current work:
 - Implement actionable recommendations based on p-value and effect size thresholds
 - Provide convenience functions for common operations (generate_insights, compare_hyperparameters, rank_experiments)
 
+**From 09-01-PLAN.md (Predictions Artifact Logging):**
+- Default predictions_path to "predictions.csv" to match ErrorAnalyzer expectations
+- Optional field for backward compatibility with existing configs
+- Log predictions to artifact root (not nested subdirectory) for ErrorAnalyzer discovery
+- Graceful handling when predictions missing (warning, not error)
+- Training scripts output predictions.csv with [image_id, actual, predicted] columns
+- Adapters log predictions after subprocess.run() completes
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -188,9 +197,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18 00:56 UTC
-Completed: Phase 8 Plan 3 (Automated Insights from Experiment Results) - All 3 tasks complete
-Next: Phase 8 (additional plans) or project completion
+Last session: 2026-01-18 01:31 UTC
+Completed: Phase 9 Plan 1 (Predictions Artifact Logging) - All 3 tasks complete
+Next: Phase 9 (additional plans) or next phase
 Resume file: None
 
 ## Phase 3 Deliverables
@@ -677,4 +686,40 @@ None - plan executed exactly as written.
 
 ### Ready for Next Phase
 All Phase 8 requirements complete. Users can now run all analytics features from CLI, generate professional HTML/PDF reports, and access comprehensive documentation. **Phase 8 (Advanced Analytics) is now 100% complete.** Ready for project completion.
+
+## Phase 9 Deliverables
+
+**Started: 2026-01-17**
+
+### Plan 1: Predictions Artifact Logging (09-01)
+
+**Completed: 2026-01-17**
+
+All requirements satisfied:
+
+- Training scripts output predictions.csv with [image_id, actual, predicted] columns
+- Adapters log predictions.csv as MLflow artifact after subprocess execution
+- ErrorAnalyzer.load_run() can retrieve predictions from MLflow artifacts
+- exp-analyze-errors CLI computes residuals from logged predictions
+- Gap 1 from v1-MILESTONE-AUDIT.md is closed
+- End-to-end analytics workflow (Training -> Artifacts -> Analytics) functional
+
+### Files Modified
+- `mlflow_tracking/config_parser.py` - Added predictions_path field to ExperimentConfig schema (5 lines)
+- `mlflow_tracking/adapters.py` - Added predictions artifact logging to adapters (26 lines added, 4 removed)
+- `scripts/train_oof_effnet.py` - Added predictions.csv output (12 lines added, 1 removed)
+- `scripts/train_ridge_advanced.py` - Added predictions.csv output (31 lines added, 6 removed)
+
+### Deviations from Plan
+None - plan executed exactly as written.
+
+### Gap Closure Status
+**Gap 1 (Predictions Artifact Logging) from v1-MILESTONE-AUDIT.md is now CLOSED.**
+
+### Ready for Next Phase
+All requirements satisfied. End-to-end analytics workflow is now functional. Ready to proceed with:
+- **Phase 9 Plan 02**: Additional data pipeline improvements (if needed)
+- **Phase 10**: Feature Store Integration
+- **Phase 11**: Model Registry
+- **Phase 12**: Deployment
 
