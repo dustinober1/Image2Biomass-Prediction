@@ -29,6 +29,11 @@ from .analytics import (
     plot_error_distribution,
     plot_prediction_vs_actual,
     plot_failure_modes,
+    ModelInterpretability,
+    compute_shap,
+    plot_feature_importance,
+    plot_local_explanation,
+    compute_permutation_importance,
 )
 
 __all__ = [
@@ -69,4 +74,9 @@ __all__ = [
     "plot_error_distribution",
     "plot_prediction_vs_actual",
     "plot_failure_modes",
+    "ModelInterpretability",
+    "compute_shap",
+    "plot_feature_importance",
+    "plot_local_explanation",
+    "compute_permutation_importance",
 ]
