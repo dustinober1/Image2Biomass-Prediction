@@ -334,9 +334,20 @@ class PyTorchAdapter(BaseAdapter):
         if 'random_seed' in config.parameters:
             seed = SeedManager.validate_seed(config.parameters['random_seed'])
             with SeedManager(seed):
-                return self._execute_with_autolog(config, framework, script_path)
+                metrics = self._execute_with_autolog(config, framework, script_path)
         else:
-            return self._execute_with_autolog(config, framework, script_path)
+            metrics = self._execute_with_autolog(config, framework, script_path)
+
+        # Log predictions artifact if file exists
+        import os
+        predictions_path = config.predictions_path or "predictions.csv"
+        if os.path.exists(predictions_path):
+            tracker.log_artifact(predictions_path, artifact_path="")
+            print(f"Logged predictions artifact: {predictions_path}")
+        else:
+            print(f"Warning: Predictions file not found: {predictions_path}")
+
+        return metrics
 
     def _execute_with_autolog(
         self,
@@ -502,9 +513,20 @@ class SklearnAdapter(BaseAdapter):
         if 'random_seed' in config.parameters:
             seed = SeedManager.validate_seed(config.parameters['random_seed'])
             with SeedManager(seed):
-                return self._execute_with_autolog(config, framework, script_path)
+                metrics = self._execute_with_autolog(config, framework, script_path)
         else:
-            return self._execute_with_autolog(config, framework, script_path)
+            metrics = self._execute_with_autolog(config, framework, script_path)
+
+        # Log predictions artifact if file exists
+        import os
+        predictions_path = config.predictions_path or "predictions.csv"
+        if os.path.exists(predictions_path):
+            tracker.log_artifact(predictions_path, artifact_path="")
+            print(f"Logged predictions artifact: {predictions_path}")
+        else:
+            print(f"Warning: Predictions file not found: {predictions_path}")
+
+        return metrics
 
     def _execute_with_autolog(
         self,
