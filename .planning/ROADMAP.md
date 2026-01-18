@@ -87,7 +87,7 @@ Phase 9 closes the critical gap between training and analytics. Currently, train
 
 **Plans**: 1 plan in 1 wave
 
-- [ ] 10-01-PLAN.md — Integrate DataSplitter with adapters (Wave 1)
+- [x] 10-01-PLAN.md — Integrate DataSplitter with adapters (Wave 1) ✓ Complete
 
 **Details**:
 Phase 10 closes the reproducibility gap by enforcing canonical splits. DataSplitter and canonical_splits.json exist from Phase 1, but adapters don't use them. This phase integrates DataSplitter with PyTorchAdapter and SklearnAdapter, ensuring all experiments use identical splits for fair comparison and reproducibility.
