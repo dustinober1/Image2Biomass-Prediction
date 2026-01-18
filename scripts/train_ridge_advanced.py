@@ -44,28 +44,47 @@ def train_ridge_advanced():
     
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
     overall_rmse = []
-    
+
+    # Track all predictions for error analysis
+    all_predictions = {}
+    all_actuals = {}
+    image_ids = stacked_df['image_path'].values
+
     for target in TARGETS:
         y = stacked_df[target].values
         X = stacked_df[feature_cols].values
-        
+
+        target_preds = np.zeros(len(X))
         target_rmses = []
+
         for fold, (train_idx, val_idx) in enumerate(kf.split(X, y)):
             X_train, X_val = X[train_idx], X[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
-            
+
             model = Ridge(alpha=1.0)
             model.fit(X_train, y_train)
-            
+
             preds = model.predict(X_val)
+            target_preds[val_idx] = preds
             rmse = np.sqrt(mean_squared_error(y_val, preds))
             target_rmses.append(rmse)
-            
+
+        all_predictions[target] = target_preds
+        all_actuals[target] = y
         avg_rmse = np.mean(target_rmses)
         print(f"  -> {target} Ridge RMSE: {avg_rmse:.4f}")
         overall_rmse.append(avg_rmse)
-        
+
     print(f"\nOverall Ridge + Advanced Feats RMSE: {np.mean(overall_rmse):.4f}")
+
+    # Save predictions for error analysis (Dry_Total_g target)
+    predictions_df = pd.DataFrame({
+        'image_id': image_ids,
+        'actual': all_actuals['Dry_Total_g'],
+        'predicted': all_predictions['Dry_Total_g']
+    })
+    predictions_df.to_csv('predictions.csv', index=False)
+    print(f"Saved predictions.csv for error analysis")
 
 if __name__ == "__main__":
     train_ridge_advanced()

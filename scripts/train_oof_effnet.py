@@ -126,9 +126,19 @@ def train_oof():
     oof_df = pd.DataFrame(oof_preds, columns=[f'OOF_EffNet_{t}' for t in TARGETS])
     oof_df['image_path'] = df['image_path']
     oof_df.to_csv(os.path.join(OUTPUT_DIR, 'oof_effnet.csv'), index=False)
-    
+
     total_rmse = np.sqrt(mean_squared_error(df[TARGETS], oof_preds))
     print(f"\nOverall EffNet OOF RMSE: {total_rmse:.4f}")
+
+    # Save predictions for error analysis (Dry_Total_g target)
+    dry_total_idx = TARGETS.index('Dry_Total_g')
+    predictions_df = pd.DataFrame({
+        'image_id': df['image_path'].values,
+        'actual': df['Dry_Total_g'].values,
+        'predicted': oof_preds[:, dry_total_idx]
+    })
+    predictions_df.to_csv('predictions.csv', index=False)
+    print(f"Saved predictions.csv for error analysis")
 
 if __name__ == "__main__":
     train_oof()
