@@ -82,23 +82,61 @@ class ModelInterpretability:
             MlflowException: If model artifact doesn't exist
         """
         try:
-            # Load model using MLflow pyfunc
-            model_uri = f"runs:/{run_id}/model"
-            model = mlflow.pyfunc.load_model(model_uri)
+            # Get run info to find model artifacts
+            run = self.client.get_run(run_id)
+            artifacts = self.client.list_artifacts(run_id)
 
-            # Extract underlying model for sklearn/xgboost/pytorch
-            # MLflow pyfunc wraps the model, we need the underlying model
-            if hasattr(model, '_model_impl'):
-                # For sklearn and xgboost models
-                underlying_model = model._model_impl
-                if hasattr(underlying_model, 'model'):
-                    return underlying_model.model
-                return underlying_model
-            elif hasattr(model, 'model'):
-                # For pytorch models
-                return model.model
+            # Find model artifacts (MLflow models are logged with MLmodel file)
+            model_artifacts = [
+                a for a in artifacts
+                if a.path.endswith('.yaml') or
+                   a.path.endswith('.pkl') or
+                   a.path.endswith('.pt') or
+                   any(child.path.endswith('MLmodel') for child in
+                       [self.client.list_artifacts(run_id, a.path)] if a.is_dir)
+            ]
 
-            return model
+            # Try common model paths
+            model_paths_to_try = []
+
+            # Add 'model' as default path (most common)
+            model_paths_to_try.append("model")
+
+            # Add any directories that look like model artifacts
+            for artifact in artifacts:
+                if artifact.is_dir and not artifact.path.startswith('.'):
+                    model_paths_to_try.append(artifact.path)
+
+            # Try each path until one works
+            last_error = None
+            for model_path in model_paths_to_try:
+                try:
+                    model_uri = f"runs:/{run_id}/{model_path}"
+                    model = mlflow.pyfunc.load_model(model_uri)
+
+                    # Extract underlying model for sklearn/xgboost/pytorch
+                    # MLflow pyfunc wraps the model, we need the underlying model
+                    if hasattr(model, '_model_impl'):
+                        # For sklearn and xgboost models
+                        underlying_model = model._model_impl
+                        if hasattr(underlying_model, 'model'):
+                            return underlying_model.model
+                        return underlying_model
+                    elif hasattr(model, 'model'):
+                        # For pytorch models
+                        return model.model
+
+                    return model
+
+                except Exception as e:
+                    last_error = e
+                    continue
+
+            # If all paths failed, raise the last error
+            if last_error:
+                raise last_error
+
+            raise MlflowException(f"No model artifact found in run {run_id}")
 
         except Exception as e:
             raise MlflowException(
@@ -449,12 +487,17 @@ class ModelInterpretability:
         # Fit on test data
         perm.fit(X_test, y_test)
 
-        # Extract results as DataFrame
-        results_df = eli5.format_as_dataframe(perm.results_)
+        # Extract importance scores directly from the object
+        # ELI5 stores results in feature_importances_ and feature_importances_std_
+        importances = perm.feature_importances_
+        stds = perm.feature_importances_std_
 
-        # Clean up column names
-        results_df = results_df.reset_index()
-        results_df.columns = ['feature', 'importance', 'std']
+        # Create DataFrame manually
+        results_df = pd.DataFrame({
+            'feature': X_test.columns,
+            'importance': importances,
+            'std': stds
+        })
 
         # Sort by importance (descending)
         results_df = results_df.sort_values('importance', ascending=False)
