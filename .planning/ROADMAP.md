@@ -154,7 +154,7 @@ Phase 11 improves organization by integrating ExperimentOrganizer with BatchExec
 
 **Plans**: 1 plan in 1 wave
 
-- [ ] 12-01-PLAN.md — Add script_path to ExperimentConfig schema (Wave 1)
+- [x] 12-01-PLAN.md — Add script_path to ExperimentConfig schema (Wave 1) ✓ Complete
 
 **Details**:
 Phase 12 removes hardcoded script paths from adapters, improving flexibility. Currently, PyTorchAdapter and SklearnAdapter have hardcoded paths like "scripts/train_oof_effnet.py". This phase adds script_path to the config schema, making it easy to run different scripts without adapter modifications.
