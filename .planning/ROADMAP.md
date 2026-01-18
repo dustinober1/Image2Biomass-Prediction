@@ -82,7 +82,7 @@ Phase 9 closes the critical gap between training and analytics. Currently, train
 **Success Criteria** (what must be TRUE):
 1. Adapters load canonical splits from DataSplitter
 2. Adapters pass split indices to training scripts via CLI args
-3. Training scripts accept --train-indices, --val-indices flags
+3. Training scripts accept --train-indices, --val-indices, --test-indices flags
 4. All experiments use identical train/validation/test splits
 
 **Plans**: 1 plan in 1 wave
@@ -93,13 +93,13 @@ Phase 9 closes the critical gap between training and analytics. Currently, train
 Phase 10 closes the reproducibility gap by enforcing canonical splits. DataSplitter and canonical_splits.json exist from Phase 1, but adapters don't use them. This phase integrates DataSplitter with PyTorchAdapter and SklearnAdapter, ensuring all experiments use identical splits for fair comparison and reproducibility.
 
 **Wave Structure:**
-- Wave 1: Add split_indices to ExperimentConfig, load splits in adapters, pass via CLI args, modify training scripts
+- Wave 1: Add split loading in adapters, pass via CLI args, modify training scripts to accept and use splits
 
 **Integration Points:**
 - Modifies mlflow_tracking/adapters.py (PyTorchAdapter, SklearnAdapter)
-- Modifies mlflow_tracking/config_parser.py (ExperimentConfig schema)
 - Uses mlflow_tracking.data_split.DataSplitter (already exists)
-- Modifies training scripts to accept --train-indices, --val-indices flags
+- Modifies training scripts to accept --train-indices, --val-indices, --test-indices flags
+- Passes indices as comma-separated strings via subprocess args
 
 ---
 
