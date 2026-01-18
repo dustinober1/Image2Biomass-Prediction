@@ -22,7 +22,7 @@ from .resource_manager import ResourceManager
 from .batch_executor import BatchExecutor, ExperimentResult, BatchProgress
 from .optuna_optimizer import OptunaOptimizer, create_optimization_config, suggest_params_from_trial
 
-# Import analytics module (error analysis and visualization)
+# Import analytics module (error analysis, visualization, and reporting)
 from .analytics import (
     ErrorAnalyzer,
     plot_residuals,
@@ -38,6 +38,9 @@ from .analytics import (
     generate_insights,
     compare_hyperparameters,
     rank_experiments,
+    ReportGenerator,
+    generate_html_report,
+    generate_pdf_report,
 )
 
 __all__ = [
@@ -87,4 +90,7 @@ __all__ = [
     "generate_insights",
     "compare_hyperparameters",
     "rank_experiments",
+    "ReportGenerator",
+    "generate_html_report",
+    "generate_pdf_report",
 ]
