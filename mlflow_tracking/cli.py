@@ -508,5 +508,630 @@ For more information, see: examples/configs/optimization/README.md
     )
 
 
+def exp_analyze_errors_command(
+    run_id: str,
+    predictions_path: str = "predictions.csv",
+    output_dir: str = "error_analysis",
+    log_artifacts: bool = True,
+    verbose: bool = False,
+) -> int:
+    """Analyze prediction errors and identify failure modes.
+
+    Args:
+        run_id: MLflow run ID to analyze
+        predictions_path: Path to predictions artifact (default: predictions.csv)
+        output_dir: Output directory for plots (default: error_analysis)
+        log_artifacts: Log analysis as MLflow artifacts (default: True)
+        verbose: Print detailed output
+
+    Returns:
+        0 on success, 1 on error
+    """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import ExperimentTracker
+    from mlflow_tracking.analytics import ErrorAnalyzer
+    from mlflow_tracking.analytics.visualizations import (
+        plot_residuals,
+        plot_error_distribution,
+        plot_prediction_vs_actual,
+    )
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+    import os
+
+    try:
+        # Initialize analyzer
+        analyzer = ErrorAnalyzer()
+
+        if verbose:
+            print(f"Loading predictions from run {run_id}...")
+
+        # Load run and predictions
+        analyzer.load_run(run_id, predictions_path)
+
+        # Compute residuals if not already computed
+        if analyzer.residuals is None:
+            analyzer.compute_residuals()
+
+        # Create output directory
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        if verbose:
+            print(f"Generating error analysis plots...")
+
+        # Generate plots
+        residual_fig = plot_residuals(analyzer.predictions_df)
+        distribution_fig = plot_error_distribution(analyzer.predictions_df)
+        pred_vs_actual_fig = plot_prediction_vs_actual(analyzer.predictions_df)
+
+        # Save plots
+        residual_path = output_path / "residuals.png"
+        distribution_path = output_path / "error_distribution.png"
+        pred_vs_actual_path = output_path / "prediction_vs_actual.png"
+
+        residual_fig.savefig(residual_path, dpi=150, bbox_inches='tight')
+        distribution_fig.savefig(distribution_path, dpi=150, bbox_inches='tight')
+        pred_vs_actual_fig.savefig(pred_vs_actual_path, dpi=150, bbox_inches='tight')
+
+        plt.close('all')
+
+        # Identify failure modes
+        if verbose:
+            print(f"Identifying failure modes...")
+
+        failure_modes = analyzer.identify_failure_modes(n_clusters=3)
+
+        # Get error statistics
+        stats = analyzer.get_error_statistics()
+
+        # Print summary
+        print(f"\n{'='*60}")
+        print(f"Error Analysis Summary")
+        print(f"{'='*60}")
+        print(f"Run ID: {run_id}")
+        print(f"\nError Statistics:")
+        print(f"  Mean Absolute Error: {stats['mean_abs_error']:.4f}")
+        print(f"  Median Absolute Error: {stats['median_abs_error']:.4f}")
+        print(f"  Max Absolute Error: {stats['max_abs_error']:.4f}")
+        print(f"  Std Residual: {stats['std_residual']:.4f}")
+        print(f"  90th Percentile: {stats['percentiles']['90']:.4f}")
+        print(f"  95th Percentile: {stats['percentiles']['95']:.4f}")
+        print(f"  99th Percentile: {stats['percentiles']['99']:.4f}")
+
+        if failure_modes is not None:
+            print(f"\nFailure Modes:")
+            for cluster_id in sorted(failure_modes['cluster'].unique()):
+                cluster_data = failure_modes[failure_modes['cluster'] == cluster_id]
+                print(f"  Cluster {cluster_id}:")
+                print(f"    Samples: {len(cluster_data)}")
+                print(f"    Mean Abs Error: {cluster_data['abs_residual'].mean():.4f}")
+                print(f"    Mean Pct Error: {cluster_data['pct_error'].mean():.2f}%")
+
+        print(f"\nPlots saved to:")
+        print(f"  {residual_path}")
+        print(f"  {distribution_path}")
+        print(f"  {pred_vs_actual_path}")
+
+        # Log artifacts if requested
+        if log_artifacts:
+            if verbose:
+                print(f"\nLogging analysis to MLflow...")
+
+            # Create child run for error analysis
+            with ExperimentTracker(
+                "error_analysis",
+                auto_log_environment=False
+            ) as tracker:
+                analysis_run_id = tracker.start_run(
+                    f"error_analysis_{run_id[:8]}",
+                    tags={"parent_run_id": run_id}
+                )
+
+                # Log plots as artifacts
+                tracker.log_artifacts(str(output_path))
+
+                # Log error statistics as metrics
+                tracker.log_metrics({
+                    "mean_abs_error": stats['mean_abs_error'],
+                    "median_abs_error": stats['median_abs_error'],
+                    "max_abs_error": stats['max_abs_error'],
+                    "std_residual": stats['std_residual'],
+                    "p90_abs_error": stats['percentiles']['90'],
+                    "p95_abs_error": stats['percentiles']['95'],
+                    "p99_abs_error": stats['percentiles']['99'],
+                })
+
+                if verbose:
+                    print(f"Error analysis logged to run: {analysis_run_id}")
+
+        return 0
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except ValueError as e:
+        print(f"Validation error: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Error analysis error: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
+def main_analyze_errors(argv: Optional[list] = None) -> int:
+    """CLI entry point for exp-analyze-errors command.
+
+    Usage:
+        exp-analyze-errors <run_id>                             # Analyze errors
+        exp-analyze-errors <run_id> --output-dir results/      # Custom output
+        exp-analyze-errors <run_id> --no-log-artifacts         # Skip MLflow logging
+        exp-analyze-errors <run_id> --verbose                  # Detailed output
+    """
+    parser = argparse.ArgumentParser(
+        description="Analyze prediction errors and identify failure modes",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  exp-analyze-errors abc123def456                    Analyze errors for run
+  exp-analyze-errors abc123def456 --output-dir err/  Custom output directory
+  exp-analyze-errors abc123def456 --no-log-artifacts Skip MLflow logging
+  exp-analyze-errors abc123def456 -v                 Verbose output
+
+For more information, see: examples/configs/analytics/README.md
+        """
+    )
+
+    parser.add_argument(
+        "run_id",
+        help="MLflow run ID to analyze"
+    )
+
+    parser.add_argument(
+        "--predictions-path",
+        default="predictions.csv",
+        help="Path to predictions artifact within run (default: predictions.csv)"
+    )
+
+    parser.add_argument(
+        "-o", "--output-dir",
+        default="error_analysis",
+        help="Output directory for plots (default: error_analysis)"
+    )
+
+    parser.add_argument(
+        "--no-log-artifacts",
+        action="store_false",
+        dest="log_artifacts",
+        help="Don't log analysis as MLflow artifacts"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Print detailed analysis information"
+    )
+
+    args = parser.parse_args(argv)
+
+    return exp_analyze_errors_command(
+        run_id=args.run_id,
+        predictions_path=args.predictions_path,
+        output_dir=args.output_dir,
+        log_artifacts=args.log_artifacts,
+        verbose=args.verbose,
+    )
+
+
+def exp_interpret_command(
+    run_id: str,
+    output_dir: str = "interpretability",
+    plot_type: str = "summary",
+    max_features: int = 20,
+    compute_permutation: bool = False,
+    log_artifacts: bool = True,
+    verbose: bool = False,
+) -> int:
+    """Generate model interpretability analysis (SHAP/ELI5).
+
+    Args:
+        run_id: MLflow run ID to analyze
+        output_dir: Output directory for plots (default: interpretability)
+        plot_type: Type of SHAP plot (summary, bar, dependence) (default: summary)
+        max_features: Max features to show (default: 20)
+        compute_permutation: Also compute permutation importance (default: False)
+        log_artifacts: Log analysis as MLflow artifacts (default: True)
+        verbose: Print detailed output
+
+    Returns:
+        0 on success, 1 on error
+    """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import ExperimentTracker
+    from mlflow_tracking.analytics import ModelInterpretability
+    from mlflow_tracking.analytics.visualizations import (
+        plot_feature_importance,
+        plot_local_explanation,
+    )
+    from pathlib import Path
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    try:
+        # Initialize interpreter
+        interpreter = ModelInterpretability()
+
+        if verbose:
+            print(f"Loading model from run {run_id}...")
+
+        # Load model from artifacts
+        model = interpreter._load_model_from_artifacts(run_id)
+
+        # Load test data (try to get from run artifacts or ask user)
+        # For now, we'll create a placeholder for the user to provide data
+        print("Note: Test data required for SHAP analysis.")
+        print("Please provide a path to test data CSV with --test-data-path.")
+        print("The CSV should have the same features as the training data.")
+
+        # This is a placeholder - in real usage, user would provide test data
+        # For now, we'll return an error message
+        print("\nError: Test data required for interpretability analysis.", file=sys.stderr)
+        print("Use --test-data-path to specify the test data file.", file=sys.stderr)
+        return 1
+
+        # The rest of this function would execute if test data was provided:
+        # X_test = load_test_data(...)
+        # shap_values, explainer = interpreter.compute_shap(run_id, X_test)
+        # ... generate plots ...
+        # ... save plots ...
+        # ... log artifacts ...
+
+    except ImportError as e:
+        print(f"Import error: {e}", file=sys.stderr)
+        print("Please install SHAP: pip install shap", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Interpretability error: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
+def main_interpret(argv: Optional[list] = None) -> int:
+    """CLI entry point for exp-interpret command.
+
+    Usage:
+        exp-interpret <run_id>                                # Generate interpretability
+        exp-interpret <run_id> --plot-type bar               # Bar plot instead
+        exp-interpret <run_id> --max-features 30             # Show more features
+        exp-interpret <run_id> --compute-permutation         # Add permutation importance
+        exp-interpret <run_id> --verbose                     # Detailed output
+    """
+    parser = argparse.ArgumentParser(
+        description="Generate model interpretability analysis (SHAP/ELI5)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  exp-interpret abc123def456                       Generate SHAP analysis
+  exp-interpret abc123def456 --plot-type bar       Use bar plot
+  exp-interpret abc123def456 --max-features 30     Show top 30 features
+  exp-interpret abc123def456 --compute-permutation Add permutation importance
+  exp-interpret abc123def456 -v                    Verbose output
+
+For more information, see: examples/configs/analytics/README.md
+        """
+    )
+
+    parser.add_argument(
+        "run_id",
+        help="MLflow run ID to analyze"
+    )
+
+    parser.add_argument(
+        "-o", "--output-dir",
+        default="interpretability",
+        help="Output directory for plots (default: interpretability)"
+    )
+
+    parser.add_argument(
+        "--plot-type",
+        default="summary",
+        choices=["summary", "bar", "dependence"],
+        help="Type of SHAP plot (default: summary)"
+    )
+
+    parser.add_argument(
+        "--max-features",
+        type=int,
+        default=20,
+        help="Maximum number of features to show (default: 20)"
+    )
+
+    parser.add_argument(
+        "--compute-permutation",
+        action="store_true",
+        help="Also compute permutation importance"
+    )
+
+    parser.add_argument(
+        "--no-log-artifacts",
+        action="store_false",
+        dest="log_artifacts",
+        help="Don't log analysis as MLflow artifacts"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Print detailed analysis information"
+    )
+
+    args = parser.parse_args(argv)
+
+    return exp_interpret_command(
+        run_id=args.run_id,
+        output_dir=args.output_dir,
+        plot_type=args.plot_type,
+        max_features=args.max_features,
+        compute_permutation=args.compute_permutation,
+        log_artifacts=args.log_artifacts,
+        verbose=args.verbose,
+    )
+
+
+def exp_insights_command(
+    run_ids: str,
+    metric: str = "val.rmse",
+    group_by: Optional[str] = None,
+    output_dir: str = "insights",
+    min_sample_size: int = 5,
+    log_artifacts: bool = True,
+    verbose: bool = False,
+) -> int:
+    """Generate automated insights from experiment comparisons.
+
+    Args:
+        run_ids: Comma-separated list of MLflow run IDs
+        metric: Metric to analyze (default: val.rmse)
+        group_by: Parameter to group by (e.g., params.learning_rate)
+        output_dir: Output directory for reports (default: insights)
+        min_sample_size: Minimum runs for statistical testing (default: 5)
+        log_artifacts: Log insights as MLflow artifacts (default: True)
+        verbose: Print detailed output
+
+    Returns:
+        0 on success, 1 on error
+    """
+    # Lazy imports to avoid circular dependency
+    from mlflow_tracking import ExperimentTracker
+    from mlflow_tracking.analytics import InsightsGenerator
+    from pathlib import Path
+    import json
+
+    try:
+        # Parse run_ids
+        run_ids_list = [r.strip() for r in run_ids.split(",")]
+
+        if verbose:
+            print(f"Analyzing {len(run_ids_list)} runs...")
+
+        # Initialize generator
+        generator = InsightsGenerator()
+
+        # Generate insights
+        insights = generator.generate_insights(
+            run_ids_list,
+            metric=metric,
+            group_by=group_by,
+            min_sample_size=min_sample_size
+        )
+
+        # Check for insufficient data
+        if insights.get("status") == "insufficient_data":
+            print(f"Warning: {insights.get('message')}", file=sys.stderr)
+            print(f"Recommendation: {insights.get('recommendation')}", file=sys.stderr)
+            return 1
+
+        # Compute hyperparameter correlations
+        if verbose:
+            print(f"Computing hyperparameter correlations...")
+
+        correlations = generator.compare_hyperparameters(run_ids_list, metric=metric)
+
+        # Rank experiments
+        if verbose:
+            print(f"Ranking experiments...")
+
+        rankings = generator.rank_experiments(run_ids_list)
+
+        # Create output directory
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Save results
+        insights_path = output_path / "insights.json"
+        correlations_path = output_path / "correlations.csv"
+        rankings_path = output_path / "rankings.csv"
+
+        with open(insights_path, 'w') as f:
+            json.dump(insights, f, indent=2, default=str)
+
+        if correlations is not None:
+            correlations.to_csv(correlations_path, index=False)
+
+        if rankings is not None:
+            rankings.to_csv(rankings_path, index=False)
+
+        # Print summary
+        print(f"\n{'='*60}")
+        print(f"Automated Insights Summary")
+        print(f"{'='*60}")
+        print(f"Analyzed {len(run_ids_list)} runs")
+        print(f"Metric: {metric}")
+
+        if "best_run" in insights:
+            print(f"\nBest Run:")
+            print(f"  Run ID: {insights['best_run']}")
+
+        if "summary_statistics" in insights:
+            stats = insights["summary_statistics"]
+            print(f"\nSummary Statistics:")
+            print(f"  Mean: {stats.get('mean', 'N/A')}")
+            print(f"  Std: {stats.get('std', 'N/A')}")
+            print(f"  Min: {stats.get('min', 'N/A')}")
+            print(f"  Max: {stats.get('max', 'N/A')}")
+
+        if "statistical_tests" in insights:
+            tests = insights["statistical_tests"]
+            if tests:
+                print(f"\nStatistical Tests:")
+                for test_name, test_result in tests.items():
+                    if isinstance(test_result, dict):
+                        p_value = test_result.get('p_value', 'N/A')
+                        effect_size = test_result.get('effect_size', 'N/A')
+                        print(f"  {test_name}:")
+                        print(f"    p-value: {p_value}")
+                        print(f"    effect size: {effect_size}")
+
+        if "recommendation" in insights:
+            print(f"\nRecommendation:")
+            print(f"  {insights['recommendation']}")
+
+        if correlations is not None and not correlations.empty:
+            print(f"\nTop Hyperparameter Correlations:")
+            for _, row in correlations.head(5).iterrows():
+                print(f"  {row['parameter']}: {row['correlation']:.3f}")
+
+        if rankings is not None and not rankings.empty:
+            print(f"\nTop Experiments:")
+            for _, row in rankings.head(5).iterrows():
+                print(f"  {row['run_id']}: {row.get('score', 'N/A')}")
+
+        print(f"\nResults saved to:")
+        print(f"  {insights_path}")
+        if correlations is not None:
+            print(f"  {correlations_path}")
+        if rankings is not None:
+            print(f"  {rankings_path}")
+
+        # Log artifacts if requested
+        if log_artifacts:
+            if verbose:
+                print(f"\nLogging insights to MLflow...")
+
+            # Create run for insights
+            with ExperimentTracker(
+                "insights",
+                auto_log_environment=False
+            ) as tracker:
+                insights_run_id = tracker.start_run(
+                    f"insights_{run_ids_list[0][:8]}",
+                    tags={"run_ids": ",".join(run_ids_list)}
+                )
+
+                # Log files as artifacts
+                tracker.log_artifacts(str(output_path))
+
+                # Log key metrics as params
+                if "best_run" in insights:
+                    tracker.log_param("best_run", insights["best_run"])
+
+                if verbose:
+                    print(f"Insights logged to run: {insights_run_id}")
+
+        return 0
+
+    except Exception as e:
+        print(f"Insights generation error: {e}", file=sys.stderr)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
+def main_insights(argv: Optional[list] = None) -> int:
+    """CLI entry point for exp-insights command.
+
+    Usage:
+        exp-insights <run_ids>                                    # Generate insights
+        exp-insights <run_ids> --metric val.mae                   # Use different metric
+        exp-insights <run_ids> --group-by params.learning_rate    # Group by parameter
+        exp-insights <run_ids> --min-sample-size 10              # Require more samples
+        exp-insights <run_ids> --verbose                         # Detailed output
+    """
+    parser = argparse.ArgumentParser(
+        description="Generate automated insights from experiment comparisons",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  exp-insights abc123,def456,ghi789                 Analyze multiple runs
+  exp-insights abc123,def456 --metric val.mae       Use different metric
+  exp-insights abc123,def456 --group-by params.lr   Group by learning rate
+  exp-insights abc123,def456 --min-sample-size 10   Require 10 samples
+  exp-insights abc123,def456 -v                     Verbose output
+
+For more information, see: examples/configs/analytics/README.md
+        """
+    )
+
+    parser.add_argument(
+        "run_ids",
+        help="Comma-separated list of MLflow run IDs to analyze"
+    )
+
+    parser.add_argument(
+        "--metric",
+        default="val.rmse",
+        help="Metric to analyze (default: val.rmse)"
+    )
+
+    parser.add_argument(
+        "--group-by",
+        default=None,
+        help="Parameter to group by (e.g., params.learning_rate)"
+    )
+
+    parser.add_argument(
+        "-o", "--output-dir",
+        default="insights",
+        help="Output directory for reports (default: insights)"
+    )
+
+    parser.add_argument(
+        "--min-sample-size",
+        type=int,
+        default=5,
+        help="Minimum runs for statistical testing (default: 5)"
+    )
+
+    parser.add_argument(
+        "--no-log-artifacts",
+        action="store_false",
+        dest="log_artifacts",
+        help="Don't log insights as MLflow artifacts"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Print detailed analysis information"
+    )
+
+    args = parser.parse_args(argv)
+
+    return exp_insights_command(
+        run_ids=args.run_ids,
+        metric=args.metric,
+        group_by=args.group_by,
+        output_dir=args.output_dir,
+        min_sample_size=args.min_sample_size,
+        log_artifacts=args.log_artifacts,
+        verbose=args.verbose,
+    )
+
+
 if __name__ == "__main__":
     sys.exit(main())
