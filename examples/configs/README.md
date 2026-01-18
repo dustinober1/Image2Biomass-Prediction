@@ -264,6 +264,8 @@ Available Resources:
   CPUs: 6/8 (2 reserved)
 Max concurrent experiments: 2
 
+Created batch group: batch-2026-01-17-210653
+
 Starting: effnet_b0_bs16_lr0.0001
 Starting: ridge_alpha0.1
 Completed: ridge_alpha0.1 (val.rmse=10.2345)
@@ -276,6 +278,38 @@ Best result:
   Run: effnet_b0_bs16_lr0.0001
   val.rmse: 8.7654
 ```
+
+### Automatic Group Creation
+
+The batch execution system automatically creates an MLflow experiment group for each batch run.
+
+**Group Naming Convention:**
+
+Each batch creates a group with format: `batch-YYYY-MM-DD-HHMMSS`
+
+Example: `batch-2026-01-17-210653` (created on January 17, 2026 at 21:06:53)
+
+**Group Metadata Tags:**
+
+- `batch_size`: Number of experiments in the batch
+- `source`: Always set to `batch_executor`
+
+These tags help identify batch runs and filter experiments in MLflow UI.
+
+**MLflow UI Navigation:**
+
+1. Start MLflow UI: `mlflow ui`
+2. Open http://localhost:5000
+3. Look for experiments starting with `batch-` in the left sidebar
+4. Click on a batch group to see all experiments from that batch run
+5. View group tags by clicking the group name
+
+**Benefits of Batch Groups:**
+
+- **Discoverability:** All related experiments grouped together
+- **Timestamp:** Easy to identify when batch was executed
+- **Metadata:** Tags show batch size and source
+- **Comparison:** Compare multiple runs from same batch side-by-side
 
 ### Programmatic Usage
 
