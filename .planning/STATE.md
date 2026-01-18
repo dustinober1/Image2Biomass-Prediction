@@ -11,14 +11,14 @@ See: .planning/PROJECT.md (updated 2025-01-17)
 
 Phase: 08 - Advanced Analytics
 Status: In progress
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [█████████░] 40%
+Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [████████████] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 3.8 min
-- Total execution time: 1.08 hours
+- Total plans completed: 18
+- Average duration: 4.1 min
+- Total execution time: 1.22 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 05-script-adapters-&-auto-logging | 1 | 1 | 3.0 min |
 | 06-parallel-execution-infrastructure | 1 | 1 | 8.0 min |
 | 07-hyperparameter-optimization | 1 | 1 | 4.0 min |
-| 08-advanced-analytics | 2 | 2 | 9.5 min |
+| 08-advanced-analytics | 3 | 3 | 9.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 6.0 min avg (17 plans total)
+- Last 5 plans: 6.8 min avg (18 plans total)
 
 *Updated after each plan completion*
 
@@ -161,6 +161,13 @@ Recent decisions affecting current work:
 - Graceful error handling when SHAP/ELI5 not installed (clear error messages with installation instructions)
 - Smart explainer selection: TreeExplainer for tree models, LinearExplainer for linear, DeepExplainer for PyTorch, KernelExplainer fallback
 
+**From 08-03-PLAN.md (Automated Insights from Experiment Results):**
+- Use scipy.stats for statistical testing (t-test, Mann-Whitney U, Shapiro-Wilk)
+- Automatic test selection based on normality assumptions (Shapiro-Wilk test)
+- Use Cohen's d for effect size measurement (standard for t-tests)
+- Implement actionable recommendations based on p-value and effect size thresholds
+- Provide convenience functions for common operations (generate_insights, compare_hyperparameters, rank_experiments)
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -181,8 +188,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18 00:45 UTC
-Completed: Phase 8 Plan 2 (Model Interpretability with SHAP and ELI5) - All 3 tasks complete
+Last session: 2026-01-18 00:56 UTC
+Completed: Phase 8 Plan 3 (Automated Insights from Experiment Results) - All 3 tasks complete
 Next: Phase 8 (additional plans) or project completion
 Resume file: None
 
@@ -585,4 +592,35 @@ All requirements satisfied:
 
 ### Ready for Next Phase
 Model interpretability infrastructure complete. Users can now compute SHAP values, generate feature importance plots, create local explanations, and compute permutation importance. Ready for Phase 8 Plan 3 or project completion.
+
+### Plan 3: Automated Insights from Experiment Results (08-03)
+
+**Completed: 2026-01-18**
+
+All requirements satisfied:
+
+- ✓ InsightsGenerator class for automated insights generation from experiment comparisons
+- ✓ Statistical significance testing (t-test, Mann-Whitney U) with automatic test selection
+- ✓ Effect size calculation using Cohen's d with interpretation
+- ✓ Automated recommendations based on statistical results
+- ✓ Hyperparameter correlation analysis with performance metrics
+- ✓ Multi-metric experiment ranking with weighted composite scores
+- ✓ Insufficient sample size detection with appropriate warnings
+- ✓ Comprehensive test suite with 11 test cases
+
+### Files Created
+- `mlflow_tracking/analytics/insights_generator.py` - InsightsGenerator class (694 lines)
+- `mlflow_tracking/test_insights_generator.py` - Comprehensive test suite (450+ lines)
+
+### Files Modified
+- `mlflow_tracking/analytics/__init__.py` - Added InsightsGenerator exports
+- `mlflow_tracking/__init__.py` - Added insights exports to package root
+
+**Total Plan 03**: 1,144+ lines of code and tests
+
+### Deviations from Plan
+None - plan executed exactly as written.
+
+### Ready for Next Phase
+Automated insights infrastructure complete. Users can now perform statistical significance testing, compute effect sizes, generate automated recommendations, analyze hyperparameter correlations, and rank experiments by multiple metrics. All Phase 8 requirements satisfied. Ready for project completion.
 
