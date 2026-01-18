@@ -303,6 +303,11 @@ class ExperimentConfig(BaseModel):
         description="Optuna hyperparameter optimization configuration"
     )
 
+    predictions_path: Optional[str] = Field(
+        default="predictions.csv",
+        description="Path to predictions CSV file output by training script"
+    )
+
     @field_validator('experiment_name', 'run_name')
     @classmethod
     def names_must_be_non_empty(cls, v: str) -> str:
