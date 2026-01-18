@@ -11,6 +11,7 @@ from torchvision import transforms
 import timm
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
+import argparse
 
 # Config
 DATA_DIR = 'csiro-biomass'
@@ -23,6 +24,10 @@ EPOCHS = 30 # Reduced for speed in OOF demonstration
 LEARNING_RATE = 1e-4
 DEVICE = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 TARGETS = ['Dry_Green_g', 'Dry_Dead_g', 'Dry_Clover_g', 'GDM_g', 'Dry_Total_g']
+
+def parse_indices(indices_str):
+    """Parse comma-separated indices string to list of integers."""
+    return [int(x.strip()) for x in indices_str.split(",") if x.strip()]
 
 class BiomassDataset(Dataset):
     def __init__(self, df, transform=None):
@@ -53,9 +58,18 @@ def load_data():
     targets_wide = df.pivot_table(index='image_path', columns='target_name', values='target', aggfunc='first').reset_index()
     return targets_wide
 
-def train_oof():
+def train_oof(train_indices=None, val_indices=None, test_indices=None):
     df = load_data()
-    
+
+    # Use provided split indices if available, otherwise fall back to KFold
+    if train_indices is not None and val_indices is not None and test_indices is not None:
+        train_idx = parse_indices(train_indices) if isinstance(train_indices, str) else train_indices
+        val_idx = parse_indices(val_indices) if isinstance(val_indices, str) else val_indices
+        test_idx = parse_indices(test_indices) if isinstance(test_indices, str) else test_indices
+        use_canonical_splits = True
+    else:
+        use_canonical_splits = False
+
     # Transforms
     train_transform = transforms.Compose([
         transforms.Resize((256, 256)),
@@ -65,34 +79,35 @@ def train_oof():
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-    
+
     val_transform = transforms.Compose([
         transforms.Resize((256, 256)),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-    
-    kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    oof_preds = np.zeros((len(df), len(TARGETS)))
-    
-    for fold, (train_idx, val_idx) in enumerate(kf.split(df)):
-        print(f"\n--- Fold {fold} ---")
+
+    if use_canonical_splits:
+        # Use canonical splits (single train/val split, not KFold)
+        print("Using canonical splits from DataSplitter")
         train_df = df.iloc[train_idx]
         val_df = df.iloc[val_idx]
-        
+        test_df = df.iloc[test_idx]
+
+        # Create datasets and loaders
         train_dataset = BiomassDataset(train_df, transform=train_transform)
         val_dataset = BiomassDataset(val_df, transform=val_transform)
-        
+
         train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-        
+
+        # Train single model on canonical splits
         model = timm.create_model('efficientnet_b0', pretrained=True, num_classes=5).to(DEVICE)
         criterion = nn.MSELoss()
         optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-        
+
         best_val_loss = float('inf')
-        
+
         for epoch in range(EPOCHS):
             model.train()
             for images, targets in train_loader:
@@ -102,33 +117,98 @@ def train_oof():
                 loss = criterion(outputs, targets)
                 loss.backward()
                 optimizer.step()
-            
+
             # Val
             model.eval()
             val_loss = 0
-            fold_val_preds = []
+            val_preds = []
             with torch.no_grad():
                 for images, targets in val_loader:
                     images, targets = images.to(DEVICE), targets.to(DEVICE)
                     outputs = model(images)
                     val_loss += criterion(outputs, targets).item() * images.size(0)
-                    fold_val_preds.append(outputs.cpu().numpy())
-            
+                    val_preds.append(outputs.cpu().numpy())
+
             val_loss /= len(val_dataset)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(model.state_dict(), os.path.join(OUTPUT_DIR, f'effnet_fold{fold}.pth'))
-                oof_preds[val_idx] = np.vstack(fold_val_preds)
-                
-            print(f"Fold {fold} Epoch {epoch+1} Val RMSE: {np.sqrt(val_loss):.4f}")
+                torch.save(model.state_dict(), os.path.join(OUTPUT_DIR, 'effnet_canonical.pth'))
+                best_val_preds = np.vstack(val_preds)
 
-    # Save OOF
-    oof_df = pd.DataFrame(oof_preds, columns=[f'OOF_EffNet_{t}' for t in TARGETS])
-    oof_df['image_path'] = df['image_path']
-    oof_df.to_csv(os.path.join(OUTPUT_DIR, 'oof_effnet.csv'), index=False)
+            print(f"Epoch {epoch+1} Val RMSE: {np.sqrt(val_loss):.4f}")
 
-    total_rmse = np.sqrt(mean_squared_error(df[TARGETS], oof_preds))
-    print(f"\nOverall EffNet OOF RMSE: {total_rmse:.4f}")
+        # Note: oof_preds not needed with canonical splits - train once
+        # Set oof_preds[val_idx] for compatibility with existing code
+        oof_preds = np.zeros((len(df), len(TARGETS)))
+        oof_preds[val_idx] = best_val_preds
+
+        # Save OOF (for compatibility)
+        oof_df = pd.DataFrame(oof_preds, columns=[f'OOF_EffNet_{t}' for t in TARGETS])
+        oof_df['image_path'] = df['image_path']
+        oof_df.to_csv(os.path.join(OUTPUT_DIR, 'oof_effnet.csv'), index=False)
+
+        # Calculate validation RMSE
+        val_rmse = np.sqrt(mean_squared_error(df.iloc[val_idx][TARGETS].values, best_val_preds))
+        print(f"\nValidation RMSE with canonical splits: {val_rmse:.4f}")
+
+    else:
+        # Original KFold code (keep as fallback)
+        kf = KFold(n_splits=5, shuffle=True, random_state=42)
+        oof_preds = np.zeros((len(df), len(TARGETS)))
+
+        for fold, (train_idx, val_idx) in enumerate(kf.split(df)):
+            print(f"\n--- Fold {fold} ---")
+            train_df = df.iloc[train_idx]
+            val_df = df.iloc[val_idx]
+
+            train_dataset = BiomassDataset(train_df, transform=train_transform)
+            val_dataset = BiomassDataset(val_df, transform=val_transform)
+
+            train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+            model = timm.create_model('efficientnet_b0', pretrained=True, num_classes=5).to(DEVICE)
+            criterion = nn.MSELoss()
+            optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+
+            best_val_loss = float('inf')
+
+            for epoch in range(EPOCHS):
+                model.train()
+                for images, targets in train_loader:
+                    images, targets = images.to(DEVICE), targets.to(DEVICE)
+                    optimizer.zero_grad()
+                    outputs = model(images)
+                    loss = criterion(outputs, targets)
+                    loss.backward()
+                    optimizer.step()
+
+                # Val
+                model.eval()
+                val_loss = 0
+                fold_val_preds = []
+                with torch.no_grad():
+                    for images, targets in val_loader:
+                        images, targets = images.to(DEVICE), targets.to(DEVICE)
+                        outputs = model(images)
+                        val_loss += criterion(outputs, targets).item() * images.size(0)
+                        fold_val_preds.append(outputs.cpu().numpy())
+
+                val_loss /= len(val_dataset)
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    torch.save(model.state_dict(), os.path.join(OUTPUT_DIR, f'effnet_fold{fold}.pth'))
+                    oof_preds[val_idx] = np.vstack(fold_val_preds)
+
+                print(f"Fold {fold} Epoch {epoch+1} Val RMSE: {np.sqrt(val_loss):.4f}")
+
+        # Save OOF
+        oof_df = pd.DataFrame(oof_preds, columns=[f'OOF_EffNet_{t}' for t in TARGETS])
+        oof_df['image_path'] = df['image_path']
+        oof_df.to_csv(os.path.join(OUTPUT_DIR, 'oof_effnet.csv'), index=False)
+
+        total_rmse = np.sqrt(mean_squared_error(df[TARGETS], oof_preds))
+        print(f"\nOverall EffNet OOF RMSE: {total_rmse:.4f}")
 
     # Save predictions for error analysis (Dry_Total_g target)
     dry_total_idx = TARGETS.index('Dry_Total_g')
@@ -140,5 +220,29 @@ def train_oof():
     predictions_df.to_csv('predictions.csv', index=False)
     print(f"Saved predictions.csv for error analysis")
 
+def main():
+    parser = argparse.ArgumentParser(description="Train EfficientNet with canonical splits")
+    parser.add_argument("--train-indices", type=str, help="Comma-separated train indices")
+    parser.add_argument("--val-indices", type=str, help="Comma-separated val indices")
+    parser.add_argument("--test-indices", type=str, help="Comma-separated test indices")
+    # Note: Keep existing params for backward compatibility
+    parser.add_argument("--model_name", type=str, default="efficientnet_b0")
+    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--learning_rate", type=float, default=1e-4)
+
+    args = parser.parse_args()
+
+    # Call train_oof with split indices if provided
+    if args.train_indices and args.val_indices and args.test_indices:
+        train_oof(
+            train_indices=args.train_indices,
+            val_indices=args.val_indices,
+            test_indices=args.test_indices
+        )
+    else:
+        # Fallback to KFold if no split indices provided
+        train_oof()
+
 if __name__ == "__main__":
-    train_oof()
+    main()
