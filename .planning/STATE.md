@@ -5,20 +5,20 @@
 See: .planning/PROJECT.md (updated 2025-01-17)
 
 **Core value:** Understand what drives biomass predictions through systematic experimentation
-**Current focus:** **Phase 9: Analytics Data Pipeline Integration** - Gap closure and end-to-end analytics workflow
+**Current focus:** **Phase 10: Canonical Splits Enforcement** - Ensuring reproducibility via identical train/validation/test splits
 
 ## Current Position
 
-Phase: 09 - Analytics Data Pipeline Integration
-Status: Complete
-Progress: Phase 1: [██████████] 100% | Phase 2: [██████████] 100% | Phase 3: [██████████] 100% | Phase 4: [██████████] 100% | Phase 5: [██████████] 100% | Phase 6: [██████████] 100% | Phase 7: [██████████] 100% | Phase 8: [██████████] 100% | Phase 9: [██████████] 100%
+Phase: 10 - Canonical Splits Enforcement
+Status: In progress
+Progress: Phase 1: [██████████] 100% | Phase 2: [░░░░░░░░░░] 0% | Phase 3: [░░░░░░░░░░] 0% | Phase 4: [░░░░░░░░░░] 0% | Phase 5: [░░░░░░░░░░] 0% | Phase 6: [░░░░░░░░░░] 0% | Phase 7: [░░░░░░░░░░] 0% | Phase 8: [░░░░░░░░░░] 0% | Phase 9: [░░░░░░░░░░] 0% | Phase 10: [████░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 3.9 min
-- Total execution time: 1.50 hours
+- Total execution time: 1.57 hours
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: Phase 1: [██████████] 100% | Phase 2: [███�
 | 07-hyperparameter-optimization | 1 | 1 | 4.0 min |
 | 08-advanced-analytics | 4 | 4 | 7.5 min |
 | 09-analytics-data-pipeline-integration | 1 | 1 | 1.0 min |
+| 10-canonical-splits-enforcement | 1 | 1 | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 5.5 min avg (23 plans total)
+- Last 5 plans: 4.2 min avg (24 plans total)
 
 *Updated after each plan completion*
 
@@ -177,6 +178,13 @@ Recent decisions affecting current work:
 - Training scripts output predictions.csv with [image_id, actual, predicted] columns
 - Adapters log predictions after subprocess.run() completes
 
+**From 10-01-PLAN.md (Canonical Splits Integration):**
+- Splits loaded in adapter, not config - always enforced, no opt-out possible
+- KFold fallback maintained for backward compatibility with direct script execution
+- Split indices passed as comma-separated strings to avoid CLI arg length limits
+- Training scripts unchanged when run directly without split args
+- Conditional logic: use canonical splits when all three provided, otherwise KFold
+
 ### Pending Todos
 
 [From .planning/todos/pending/ — ideas captured during sessions]
@@ -197,9 +205,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18 01:31 UTC
-Completed: Phase 9 Plan 1 (Predictions Artifact Logging) - All 3 tasks complete
-Next: Phase 9 (additional plans) or next phase
+Last session: 2026-01-18 01:49 UTC
+Completed: Phase 10 Plan 1 (Canonical Splits Integration) - All 4 tasks complete
+Next: Phase 10 (additional plans) or next phase
 Resume file: None
 
 ## Phase 3 Deliverables
@@ -719,7 +727,43 @@ None - plan executed exactly as written.
 ### Ready for Next Phase
 All requirements satisfied. End-to-end analytics workflow is now functional. Ready to proceed with:
 - **Phase 9 Plan 02**: Additional data pipeline improvements (if needed)
-- **Phase 10**: Feature Store Integration
+- **Phase 10**: Canonical Splits Enforcement
 - **Phase 11**: Model Registry
 - **Phase 12**: Deployment
+
+## Phase 10 Deliverables
+
+**Started: 2026-01-18**
+
+### Plan 1: Canonical Splits Integration (10-01)
+
+**Completed: 2026-01-18**
+
+All requirements satisfied:
+
+- PyTorchAdapter loads canonical splits from DataSplitter and passes to train_oof_effnet.py
+- SklearnAdapter loads canonical splits from DataSplitter and passes to train_ridge_advanced.py
+- train_oof_effnet.py accepts --train-indices, --val-indices, --test-indices args
+- train_ridge_advanced.py accepts --train-indices, --val-indices, --test-indices args
+- Both scripts use provided splits instead of KFold when indices are provided
+- KFold fallback remains for direct script execution without split args
+- All experiments now use identical splits from canonical_splits.json
+
+### Files Modified
+- `mlflow_tracking/adapters.py` - Added DataSplitter import, both adapters load and pass split indices (32 lines added)
+- `scripts/train_oof_effnet.py` - Added argparse, parse_indices helper, conditional canonical/KFold logic, main() function (133 lines added, 29 removed)
+- `scripts/train_ridge_advanced.py` - Added argparse, parse_indices helper, conditional canonical/KFold logic, main() function (91 lines added, 24 removed)
+
+### Deviations from Plan
+None - plan executed exactly as written.
+
+### Gap Closure Status
+**Gap 2 (Canonical Splits Enforcement) from v1-MILESTONE-AUDIT.md is now CLOSED.**
+
+### Ready for Next Phase
+All requirements satisfied. Canonical splits enforcement is now complete. All experiments use identical train/validation/test splits. Ready to proceed with:
+- **Phase 10 Plan 02**: Additional canonical splits improvements (if needed)
+- **Phase 11**: Feature Store Integration
+- **Phase 12**: Model Registry
+- **Phase 13**: Deployment
 
