@@ -19,6 +19,7 @@ import json
 from mlflow_tracking.config_parser import ExperimentConfig
 from mlflow_tracking.autolog import AutoLogger
 from mlflow_tracking.seed_manager import SeedManager
+from mlflow_tracking.data_split import DataSplitter
 
 
 class BaseAdapter(ABC):
@@ -365,10 +366,25 @@ class PyTorchAdapter(BaseAdapter):
         Returns:
             Empty dict (metrics logged automatically by MLflow autolog)
         """
+        # Load canonical splits
+        splitter = DataSplitter(split_file="data/canonical_splits.json")
+        splits = splitter.load_splits()
+
         # Enable auto-logging for the detected framework
         with AutoLogger(framework):
             # Build command args from config parameters
             args = ["python3", script_path]
+
+            # Add split indices as comma-separated strings
+            train_str = ",".join(map(str, splits["train_indices"]))
+            val_str = ",".join(map(str, splits["val_indices"]))
+            test_str = ",".join(map(str, splits["test_indices"]))
+
+            args.extend([
+                "--train-indices", train_str,
+                "--val-indices", val_str,
+                "--test-indices", test_str
+            ])
 
             # Convert parameters to CLI args
             param_mapping = {
