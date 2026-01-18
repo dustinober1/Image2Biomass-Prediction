@@ -22,13 +22,14 @@ A systematic experimental research framework for pasture biomass prediction. Thi
 
 ### Active
 
-- [ ] **Experimental framework** — Systematic way to define, run, and track many experiments in parallel
 - [ ] **Model ablations** — Controlled comparisons of model architectures and components
 - [ ] **Feature ablations** — Test with/without specific features to measure contribution
 - [ ] **Ensemble comparisons** — Compare stacking strategies (Ridge vs Quantile vs non-linear meta-learners)
-- [ ] **Post-hoc analysis** — Analyze prediction patterns, error modes, and model behavior
-- [ ] **Results clustering** — Group and analyze experimental outcomes to find patterns
 - [ ] **Insights documentation** — Structured findings on what works, what doesn't, and why
+
+### Validated
+
+- ✓ **Experimental framework** — v1 shipped with MLflow tracking, YAML configs, batch execution, hyperparameter optimization, and advanced analytics — 2026-01-18
 
 ### Out of Scope
 
@@ -64,6 +65,30 @@ A systematic experimental research framework for pasture biomass prediction. Thi
 - Small dataset limits deep learning generalization
 - Test set lacks metadata; requires proxy models or imputation
 
+## Current State
+
+**Shipped:** v1 (Experiment Tracking Foundation) — 2026-01-18
+
+**Delivered:**
+- MLflow-based experiment tracking with reproducibility guarantees
+- YAML-driven configuration with parameter sweeps
+- Batch execution with resource management
+- Hyperparameter optimization with Optuna
+- Advanced analytics (error analysis, interpretability, insights)
+- Complete end-to-end workflows (training → artifacts → analytics)
+
+**Codebase:**
+- ~17,172 lines of Python code
+- 12 phases, 21 plans completed
+- 27/27 requirements satisfied (24 v1 + 3 v2 early)
+- Zero tech debt
+
+**Next Milestone Goals:**
+- Model ablations (controlled architecture comparisons)
+- Feature ablations (with/without specific features)
+- Ensemble comparisons (stacking strategies)
+- Insights documentation (structured findings)
+
 ## Constraints
 
 - **Dataset size** — Fixed at 357 training images; cannot collect more
@@ -82,4 +107,4 @@ A systematic experimental research framework for pasture biomass prediction. Thi
 | OOF predictions for stacking | Prevents data leakage; ensures meta-learner trains on unbiased predictions | ✓ Good — Proper CV methodology |
 
 ---
-*Last updated: 2025-01-17 after initialization*
+*Last updated: 2026-01-18 after v1 milestone*
