@@ -308,6 +308,24 @@ class ExperimentConfig(BaseModel):
         description="Path to predictions CSV file output by training script"
     )
 
+    script_path: Optional[str] = Field(
+        default=None,
+        description="Path to training script (relative to project root)"
+    )
+
+    @field_validator('script_path')
+    @classmethod
+    def validate_script_path(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that script_path exists if provided."""
+        if v is None:
+            return v
+        script_file = Path(v)
+        if not script_file.exists():
+            raise ValueError(f"script_path '{v}' does not exist")
+        if not script_file.suffix == '.py':
+            raise ValueError(f"script_path '{v}' must be a .py file")
+        return v
+
     @field_validator('experiment_name', 'run_name')
     @classmethod
     def names_must_be_non_empty(cls, v: str) -> str:
