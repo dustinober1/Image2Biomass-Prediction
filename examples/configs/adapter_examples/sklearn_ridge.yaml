@@ -1,6 +1,7 @@
 experiment_name: sklearn_baselines
 run_name: ridge_alpha{{alpha}}
 adapter: sklearn
+script_path: "scripts/train_ridge_advanced.py"
 description: "Ridge regression on tabular metadata (Height, NDVI)"
 
 parameters:

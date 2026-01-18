@@ -20,6 +20,7 @@ This directory contains example YAML configuration files for defining experiment
 | Field | Type | Description |
 |-------|------|-------------|
 | `description` | string | Human-readable experiment description |
+| `script_path` | string | Path to training script (relative to project root). Recommended for all new configs. |
 | `sweep` | dict | Parameter sweep definition (see below) |
 
 ## Parameter Sweeps
@@ -137,6 +138,7 @@ config = ExperimentConfig(**config_dict)
 3. **Reproducibility**: Always set random_seed explicitly
 4. **Documentation**: Add description field for context
 5. **Version control**: Commit configs alongside code changes
+6. **Script paths**: Always specify script_path in configs (will be required in future versions)
 
 ## Creating Adapters for Additional Scripts
 
@@ -163,7 +165,7 @@ class ResNetAdapter(BaseAdapter):
         return True
 
     def execute(self, config: ExperimentConfig, tracker) -> Dict[str, float]:
-        script_path = "scripts/train_resnet.py"  # Update script path
+        script_path = config.script_path or "scripts/train_resnet.py"  # Use config script_path
         args = ["python3", script_path]
 
         # Build CLI args from config.parameters
@@ -183,6 +185,7 @@ class ResNetAdapter(BaseAdapter):
 experiment_name: resnet_experiments
 run_name: resnet_b0
 adapter: pytorch_resnet  # Use new adapter name
+script_path: "scripts/train_resnet.py"  # Specify script path
 parameters:
   model_name: "resnet18"
   batch_size: 32
@@ -225,8 +228,8 @@ Currently implemented adapters:
 
 | Adapter | Script | Required Parameters |
 |---------|--------|---------------------|
-| `pytorch` | `train_oof_effnet.py` | model_name, batch_size, epochs, learning_rate |
-| `sklearn` | `train_ridge_advanced.py` | model_type, random_seed |
+| `pytorch` | `train_oof_effnet.py` (default, use script_path to override) | model_name, batch_size, epochs, learning_rate |
+| `sklearn` | `train_ridge_advanced.py` (default, use script_path to override) | model_type, random_seed |
 
 To add more adapters, copy the pattern from `mlflow_tracking/adapters.py`.
 

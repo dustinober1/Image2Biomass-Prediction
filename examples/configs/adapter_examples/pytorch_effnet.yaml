@@ -1,6 +1,7 @@
 experiment_name: pytorch_baselines
 run_name: effnet_b0_bs{{batch_size}}_lr{{learning_rate}}
 adapter: pytorch
+script_path: "scripts/train_oof_effnet.py"
 description: "EfficientNet-B0 for biomass prediction with image features"
 
 parameters:
