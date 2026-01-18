@@ -27,6 +27,10 @@ xgboost>=1.5.0
 # Hyperparameter optimization:
 optuna>=3.0.0
 
+# Model interpretability:
+shap>=0.50.0
+eli5>=0.13.0
+
 # Testing:
 pytest>=7.0.0
 pytest-cov>=2.12.0
