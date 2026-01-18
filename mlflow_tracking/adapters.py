@@ -560,12 +560,27 @@ class SklearnAdapter(BaseAdapter):
         Returns:
             Empty dict (metrics logged automatically by MLflow autolog)
         """
+        # Load canonical splits
+        splitter = DataSplitter(split_file="data/canonical_splits.json")
+        splits = splitter.load_splits()
+
         # Enable auto-logging for the detected framework
         with AutoLogger(framework):
             # Build command args from config parameters
             args = ["python3", script_path]
 
-            # Convert all parameters to CLI args
+            # Add split indices as comma-separated strings
+            train_str = ",".join(map(str, splits["train_indices"]))
+            val_str = ",".join(map(str, splits["val_indices"]))
+            test_str = ",".join(map(str, splits["test_indices"]))
+
+            args.extend([
+                "--train-indices", train_str,
+                "--val-indices", val_str,
+                "--test-indices", test_str
+            ])
+
+            # Then add existing parameters
             for param_name, value in config.parameters.items():
                 arg_name = f"--{param_name}"
                 args.append(arg_name)
